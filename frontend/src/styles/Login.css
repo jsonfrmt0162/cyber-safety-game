@@ -6,7 +6,7 @@
     height: 100vh;
     width: 100vw;
     background: linear-gradient(135deg, #f5af19, #f12711);
-    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-family: 'Comic Sans MS', sans-serif;
     padding: 1rem;
     box-sizing: border-box;
   }
