@@ -1,6 +1,7 @@
 // src/pages/Dashboard.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import "../styles/Dashboard.css";
+import "../pages/PhishBlasterGame";
 import {
   getUserDashboard,
   getGlobalLeaderboard,
@@ -8,6 +9,7 @@ import {
   getUserProgress,
 } from "../services/api";
 import { useNavigate } from "react-router-dom";
+
 
 const CYBER_TIPS = [
   "Think before you post — once it's online, it can stay forever.",
@@ -194,6 +196,14 @@ export default function Dashboard() {
 
       
         <div className="header-buttons">
+        <button
+           className="ghost-button"
+           type="button"
+           onClick={() => navigate("/adventure", { state: { userId: user.id } })}
+         >
+           Anti-Phish Blaster  🎮
+         </button>
+
           <button
             className="ghost-button"
             type="button"
