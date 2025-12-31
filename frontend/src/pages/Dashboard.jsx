@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "../styles/Dashboard.css";
 import "../pages/PhishBlasterGame";
+import DashboardSkeleton from "../components/DashboardSkeleton";
 import {
   getUserDashboard,
   getGlobalLeaderboard,
@@ -176,7 +177,13 @@ export default function Dashboard() {
   const getProgressForGame = (gameId) =>
     topicProgress.find((p) => p.game_id === gameId);
 
-  if (loading) return <p>Loading dashboard...</p>;
+    if (loading) {
+        return (
+          <div className="dashboard-container">
+            <DashboardSkeleton />
+          </div>
+        );
+      }
   if (!user) return <p>Error loading user data.</p>;
 
   return (

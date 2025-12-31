@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import Toast from "../components/Toast";
 import { api } from "../services/api";
 
 const GAME_WIDTH = 900;

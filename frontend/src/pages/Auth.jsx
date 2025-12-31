@@ -3,6 +3,8 @@ import { useState } from "react";
 import { login, register } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import "../styles/Login.css";
+import Toast from "../components/Toast";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +17,10 @@ export default function Auth() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastType, setToastType] = useState("info");
+  const [toastMsg, setToastMsg] = useState("");
+
   const navigate = useNavigate();
 
   const calculateAge = (birthday) => {
@@ -44,6 +50,12 @@ export default function Auth() {
     }
   };
 
+  const showToast = (type, msg) => {
+    setToastType(type);
+    setToastMsg(msg);
+    setToastOpen(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -56,25 +68,27 @@ export default function Auth() {
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("user_id", data.user_id);
         localStorage.setItem("username", data.username);
-
+        showToast("success", `Welcome back, ${data.username || "player"}!`);
         navigate("/dashboard");
       } else {
         await register(form);
-        alert("🎉 Registration successful! Please login.");
+        showToast("success", "🎉 Registration successful! Please log in.");
         setIsLogin(true);
       }
     } catch (err) {
-      const message =
+        const msg =
         err.response?.data?.detail ||
         err.message ||
-        "Request failed. Please try again.";
-      setError(message);
+        (isLogin ? "Login failed. Please check your details." : "Could not register. Try again.");
+      setError(msg);
+      showToast("error", msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
+    <>
     <div className="login-container">
       <div className="login-card">
         <h1 className="login-title">
@@ -141,8 +155,8 @@ export default function Auth() {
           <button type="submit" className="login-button" disabled={loading}>
             {loading
               ? isLogin
-                ? "Logging in..."
-                : "Registering..."
+              ? "Logging you in..."
+              : "Creating your account..."
               : isLogin
               ? "Login"
               : "Register"}
@@ -157,5 +171,30 @@ export default function Auth() {
         </p>
       </div>
     </div>
+
+      <LoadingOverlay
+
+        show={loading}
+
+        text={isLogin ? "Logging you in..." : "Setting up your player profile..."}
+
+      />
+
+      {/* Toast for success / error */}
+
+      <Toast
+
+        open={toastOpen}
+
+        type={toastType}
+
+        message={toastMsg}
+
+        onClose={() => setToastOpen(false)}
+
+      />
+
+    </>
+    
   );
 }
