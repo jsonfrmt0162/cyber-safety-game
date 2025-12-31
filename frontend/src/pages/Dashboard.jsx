@@ -1,4 +1,3 @@
-// src/pages/Dashboard.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import "../styles/Dashboard.css";
 import "../pages/PhishBlasterGame";
@@ -128,23 +127,36 @@ export default function Dashboard() {
     fetchData();
   }, [navigate]);
 
+const quizGames = games.filter((g) => g.is_quiz);       // only 4 topics
+const adventureGames = games.filter((g) => !g.is_quiz); // Anti-Phish etc.
+
+const quizProgress = useMemo(() => {
+    if (!topicProgress.length || !quizGames.length) return [];
+  
+    const quizIds = new Set(quizGames.map((g) => g.id));
+  
+    // adjust `p.game_id` to `p.gameId` if that’s the field name you use
+    return topicProgress.filter((p) => quizIds.has(p.game_id));
+  }, [topicProgress, quizGames]);
+
   const summary = useMemo(() => {
-    if (!topicProgress.length) return null;
-
-    const completed = topicProgress.filter((p) => p.percent >= 100).length;
-    const total = topicProgress.length;
+    if (!quizProgress.length) return null;
+  
+    const completed = quizProgress.filter((p) => p.percent >= 100).length;
+    const total = quizProgress.length;
     const overallPercent =
-      topicProgress.reduce((sum, p) => sum + p.percent, 0) / total;
-
-    const nextTopic = topicProgress.find((p) => p.percent < 100);
-
+      quizProgress.reduce((sum, p) => sum + p.percent, 0) / total;
+  
+    const nextTopic = quizProgress.find((p) => p.percent < 100);
+  
     return {
       completed,
       total,
       overallPercent: Math.round(overallPercent),
       nextTopic,
     };
-  }, [topicProgress]);
+  }, [quizProgress]);
+  
 
   const topicsCompleted = summary?.completed ?? 0;
   const totalTopics = summary?.total ?? (topicProgress?.length || 4);
