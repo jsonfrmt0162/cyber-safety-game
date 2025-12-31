@@ -89,112 +89,178 @@ export default function Auth() {
 
   return (
     <>
-    <div className="login-container">
-      <div className="login-card">
-        <h1 className="login-title">
-          {isLogin ? "🎮 Cyber Safety Game Login" : "📝 Sign Up"}
-        </h1>
-
-        {error && <p className="login-error">{error}</p>}
-
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-        >
-          {!isLogin && (
-            <>
+      <div className="login-container">
+        <div className="login-shell">
+          {/* LEFT HERO PANEL */}
+          <div className="login-hero">
+            <div className="login-hero-heading">
+              <h1 className="login-hero-title">
+                <span className="emoji">🛡️</span>
+                Cyber Safety Arcade
+              </h1>
+              <p className="login-hero-subtitle">
+                Log in to keep leveling up your skills in digital footprints,
+                personal information, passwords, and social media safety.
+              </p>
+  
+              <div className="login-hero-chips">
+                <div className="hero-chip">
+                  <span className="icon">🔍</span> Spot phishing scams
+                </div>
+                <div className="hero-chip">
+                  <span className="icon">🧩</span> Quiz-based challenges
+                </div>
+                <div className="hero-chip">
+                  <span className="icon">🏆</span> Climb the leaderboard
+                </div>
+              </div>
+            </div>
+  
+            <div className="login-hero-footer">
+              <div className="login-hero-footer-icon">💡</div>
+              <div className="login-hero-footer-text">
+                <strong>Tip:</strong> Never reuse the same password on every
+                site — even games!
+              </div>
+            </div>
+          </div>
+  
+          {/* RIGHT FORM PANEL */}
+          <div className="login-card">
+            <div className="login-logo">
+              <span>🎮</span>
+              CYBER SAFETY PORTAL
+            </div>
+  
+            {/* Toggle tabs */}
+            <div className="auth-toggle">
+              <button
+                type="button"
+                className={`auth-tab ${isLogin ? "active" : ""}`}
+                onClick={() => setIsLogin(true)}
+              >
+                Log in
+              </button>
+              <button
+                type="button"
+                className={`auth-tab ${!isLogin ? "active" : ""}`}
+                onClick={() => setIsLogin(false)}
+              >
+                Sign up
+              </button>
+            </div>
+  
+            <div>
+              <h2 className="login-title">
+                {isLogin ? "Welcome back!" : "Create your player profile"}
+              </h2>
+              <p className="login-subtext">
+                {isLogin
+                  ? "Enter your details to continue your cyber safety journey."
+                  : "Just a few details so we can track your progress and scores."}
+              </p>
+            </div>
+  
+            {error && <p className="login-error">{error}</p>}
+  
+            <form onSubmit={handleSubmit} className="login-form">
+              {!isLogin && (
+                <>
+                  <input
+                    type="text"
+                    name="username"
+                    placeholder="Username"
+                    value={form.username}
+                    onChange={handleChange}
+                    required
+                    className="login-input"
+                  />
+  
+                  <input
+                    type="date"
+                    name="birthday"
+                    value={form.birthday}
+                    onChange={handleChange}
+                    required
+                    className="login-input"
+                  />
+  
+                  <input
+                    type="text"
+                    value={form.age ? `${form.age} years old` : ""}
+                    readOnly
+                    className="login-input"
+                    placeholder="Age"
+                  />
+                </>
+              )}
+  
               <input
-                type="text"
-                name="username"
-                placeholder="Username"
-                value={form.username}
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={form.email}
                 onChange={handleChange}
                 required
                 className="login-input"
               />
-
+  
               <input
-                type="date"
-                name="birthday"
-                value={form.birthday}
+                type="password"
+                name="password"
+                placeholder="Password"
+                value={form.password}
                 onChange={handleChange}
                 required
                 className="login-input"
               />
-
-              <input
-                type="text"
-                value={form.age ? `${form.age} years old` : ""}
-                readOnly
-                className="login-input"
-                placeholder="Age"
-              />
-            </>
-          )}
-
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            className="login-input"
-          />
-
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            required
-            className="login-input"
-          />
-
-          <button type="submit" className="login-button" disabled={loading}>
-            {loading
-              ? isLogin
-              ? "Logging you in..."
-              : "Creating your account..."
-              : isLogin
-              ? "Login"
-              : "Register"}
-          </button>
-        </form>
-
-        <p className="signup-text">
-          {isLogin ? "Don't have an account? " : "Already have an account? "}
-          <span className="signup-link" onClick={() => setIsLogin(!isLogin)}>
-            {isLogin ? "Register" : "Login"}
-          </span>
-        </p>
+  
+              <button type="submit" className="login-button" disabled={loading}>
+                {loading
+                  ? isLogin
+                    ? "Logging you in..."
+                    : "Creating your account..."
+                  : isLogin
+                  ? "Log in"
+                  : "Sign up"}
+              </button>
+  
+              <p className="login-meta">
+                By continuing, you agree to play safely and protect your personal
+                information online.
+              </p>
+            </form>
+  
+            <p className="signup-text">
+              {isLogin ? "New here? " : "Already have an account? "}
+              <span
+                className="signup-link"
+                onClick={() => setIsLogin((prev) => !prev)}
+              >
+                {isLogin ? "Create an account" : "Log in instead"}
+              </span>
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
-
+  
+      {/* Loading overlay */}
       <LoadingOverlay
-
         show={loading}
-
-        text={isLogin ? "Logging you in..." : "Setting up your player profile..."}
-
+        text={
+          isLogin
+            ? "Checking your credentials..."
+            : "Setting up your cyber safety profile..."
+        }
       />
-
+  
       {/* Toast for success / error */}
-
       <Toast
-
         open={toastOpen}
-
         type={toastType}
-
         message={toastMsg}
-
         onClose={() => setToastOpen(false)}
-
       />
-
     </>
-    
   );
 }
