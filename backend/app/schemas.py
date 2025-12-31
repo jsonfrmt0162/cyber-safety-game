@@ -32,6 +32,7 @@ class GameOut(BaseModel):
     id: int
     title: str
     emoji: str
+    is_quiz: bool 
 
     class Config:
         orm_mode = True

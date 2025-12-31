@@ -29,5 +29,9 @@ def get_global_leaderboard(db: Session = Depends(database.get_db)):
 
 @router.get("/list", response_model=list[schemas.GameOut])
 def list_games(db: Session = Depends(database.get_db)):
-    games = db.query(models.Game).all()
+    games = (
+        db.query(models.Game)
+        .filter(models.Game.is_quiz == True) 
+        .all()
+    )
     return games

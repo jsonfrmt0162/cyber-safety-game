@@ -1,5 +1,5 @@
 # app/models.py
-from sqlalchemy import Column, Integer, String, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -27,6 +27,7 @@ class Game(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     emoji = Column(String, nullable=False)
+    is_quiz = Column(Boolean, default=True)
 
     scores = relationship("Score", back_populates="game")
 
