@@ -295,3 +295,53 @@
     text-align: center;
   }
   
+
+  .quiz-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+  
+  .tts-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+  
+  .tts-button {
+    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+    border: none;
+    background: linear-gradient(135deg, #4f46e5, #38bdf8);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
+    transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+  }
+  
+  .tts-button:hover {
+    filter: brightness(1.03);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+  }
+  
+  .tts-button.speaking {
+    background: linear-gradient(135deg, #f97316, #fb7185);
+  }
+  
+  .tts-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: #6b7280;
+  }
+  
+  .tts-toggle input {
+    accent-color: #4f46e5;
+  }
+  

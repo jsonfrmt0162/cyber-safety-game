@@ -1,12 +1,9 @@
 // src/pages/Game.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  submitScore,
-  getGameLeaderboard,
-  getGames,
-} from "../services/api";
+import { submitScore, getGameLeaderboard, getGames } from "../services/api";
 import "../styles/Game.css";
+import useTextToSpeech from "../hooks/useTextToSpeech";
 
 // -------------------- CONTENT -------------------- //
 
@@ -179,6 +176,10 @@ export default function Game() {
 
   const userId = Number(localStorage.getItem("user_id"));
 
+  // text-to-speech hook
+  const { speak, stop, speaking, supported } = useTextToSpeech();
+  const [autoNarrate, setAutoNarrate] = useState(true);
+
   useEffect(() => {
     const loadGame = async () => {
       const allGames = await getGames();
@@ -250,15 +251,43 @@ export default function Game() {
     }
   };
 
+  // ----- derived values & narration hooks (must be BEFORE any return) -----
+
+  const currentQuestion = questions[currentIndex] || null;
+  const quizPercent = questions.length
+    ? Math.round((currentIndex / questions.length) * 100)
+    : 0;
+  const objectives = OBJECTIVES[numericGameId] || [];
+  const reflections = REFLECTION_QUESTIONS[numericGameId] || [];
+
+  // build “story style” narration for this question
+  const narrationText = useMemo(() => {
+    if (!currentQuestion || !questions.length) return "";
+    const baseIntro = `Cyber safety quiz. Topic: ${currentQuestion.topic}. Question ${
+      currentIndex + 1
+    } of ${questions.length}.`;
+    const questionPart = currentQuestion.question;
+    const optionsPart = currentQuestion.options
+      .map((opt, idx) => `Option ${idx + 1}: ${opt}.`)
+      .join(" ");
+    return `${baseIntro} ${questionPart} Here are your choices. ${optionsPart}`;
+  }, [currentQuestion, currentIndex, questions.length]);
+
+  // auto-narrate whenever the question changes
+  useEffect(() => {
+    if (!autoNarrate || !currentQuestion || !narrationText) return;
+    speak(narrationText, { rate: 0.95, pitch: 1.05 });
+    return () => {
+      stop();
+    };
+  }, [autoNarrate, currentQuestion, narrationText, speak, stop]);
+
+  // ----- early return AFTER all hooks -----
   if (!questions.length) {
     return <p className="game-loading">Loading questions...</p>;
   }
 
-  const currentQuestion = questions[currentIndex];
-  const quizPercent = Math.round((currentIndex / questions.length) * 100);
-  const objectives = OBJECTIVES[numericGameId] || [];
-  const reflections = REFLECTION_QUESTIONS[numericGameId] || [];
-
+  // ----- UI -----
   return (
     <div className="game-page">
       <header className="game-header">
@@ -286,16 +315,44 @@ export default function Game() {
             </ul>
           </div>
 
-          <div className="quiz-progress">
-            <span>
-              Question {currentIndex + 1} of {questions.length}
-            </span>
-            <div className="quiz-progress-bar">
-              <div
-                className="quiz-progress-fill"
-                style={{ width: `${quizPercent}%` }}
-              />
+          {/* Progress + narration controls */}
+          <div className="quiz-top-row">
+            <div className="quiz-progress">
+              <span>
+                Question {currentIndex + 1} of {questions.length}
+              </span>
+              <div className="quiz-progress-bar">
+                <div
+                  className="quiz-progress-fill"
+                  style={{ width: `${quizPercent}%` }}
+                />
+              </div>
             </div>
+
+            {supported && (
+              <div className="tts-controls">
+                <button
+                  type="button"
+                  className={`tts-button ${speaking ? "speaking" : ""}`}
+                  onClick={() =>
+                    speaking
+                      ? stop()
+                      : speak(narrationText, { rate: 0.95, pitch: 1.05 })
+                  }
+                >
+                  {speaking ? "⏹ Stop voice" : "🔊 Listen"}
+                </button>
+
+                <label className="tts-toggle">
+                  <input
+                    type="checkbox"
+                    checked={autoNarrate}
+                    onChange={(e) => setAutoNarrate(e.target.checked)}
+                  />
+                  <span>Auto-read questions</span>
+                </label>
+              </div>
+            )}
           </div>
 
           <p className="quiz-topic">Topic: {currentQuestion.topic}</p>
