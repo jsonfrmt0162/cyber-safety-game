@@ -11,6 +11,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 
+
 const CYBER_TIPS = [
   "Think before you post — once it's online, it can stay forever.",
   "Use strong, unique passwords for every account.",
@@ -28,6 +29,46 @@ const SAFETY_CHECKLIST = [
     "Limit location sharing and avoid posting your real-time location.",
     "Never overshare personal details like school, home address, or full birthday.",
   ];  
+
+// inside src/pages/Dashboard.jsx (top of file, after imports)
+
+function TopicProgressCard({ topic }) {
+    const { title, emoji, percent } = topic;
+  
+    return (
+      <div className="topic-card">
+        <div className="topic-card-header">
+          <div className="topic-emoji">{emoji || "📘"}</div>
+          <div className="topic-text">
+            <h3>{title}</h3>
+            <p className="topic-sub">
+              {percent >= 100 ? "Completed 🎉" : "Keep going!"}
+            </p>
+          </div>
+        </div>
+  
+        <div className="topic-card-body">
+          <div
+            className="topic-ring"
+            style={{ "--value": percent }}
+          >
+            <div className="topic-ring-center">
+              <span className="topic-ring-percent">{percent}%</span>
+              <span className="topic-ring-label">Mastery</span>
+            </div>
+          </div>
+  
+          <div className="topic-details">
+            <p className="topic-hint">
+              {percent >= 100
+                ? "You answered all questions correctly!"
+                : "Answer all questions correctly to fill the circle."}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }  
 
 function GameCard({ game, progress, onPlay, locked, prereqTitle }) {
     const percent = progress?.percent ?? 0;
@@ -283,7 +324,7 @@ const quizProgress = useMemo(() => {
               <p>Play your first quiz to start tracking your progress!</p>
             )}
           </div>
-            
+
           {/* Cyber Safety Tip */}
           <div className="tip-card">
             <div className="card-title-row">
@@ -306,7 +347,27 @@ const quizProgress = useMemo(() => {
           </div>
         </section>
 
- 
+        <section className="topics-progress-section">
+           <div className="section-header">
+             <h2>Topic Progress</h2>
+             <p>
+               Each ring fills when you answer <strong>all</strong> questions
+               correctly for that topic.
+             </p>
+           </div>
+                     
+           <div className="topics-grid">
+           {topicProgress
+            .filter((topic) => {
+              const game = games.find((g) => g.id === topic.game_id);
+              return game?.is_quiz;     // only quizzes allowed
+            })
+            .map((topic) => (
+              <TopicProgressCard key={topic.game_id} topic={topic} />
+            ))}
+
+           </div>
+         </section>
 
     {/* Smart habits section (checklist + why it matters) */}
     <section className="info-section">
