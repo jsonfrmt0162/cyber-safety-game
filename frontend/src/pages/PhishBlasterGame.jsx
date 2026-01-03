@@ -113,7 +113,7 @@ export default function PhishBlasterGame({ userId, gameId }) {
     const spawnRock = () => {
       const isBad = Math.random() < 0.55; // more bad than good
       const type = isBad ? ROCK_TYPES.BAD : ROCK_TYPES.GOOD;
-      const speed = isBad ? 2 + difficulty * 0.4 : 1.8 + difficulty * 0.35;
+      const speed = isBad ? 0.7 + difficulty * 0.4 : 0.4 + difficulty * 0.35;
       const textOptionsBad = [
         "FREE ROBUX NOW!",
         "YOU WON A PRIZE!",
