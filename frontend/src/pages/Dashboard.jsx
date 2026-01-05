@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "../styles/Dashboard.css";
 import "../pages/PhishBlasterGame";
+import cyberQuestLogo from "../assets/cyber_logo.jpeg";
+
 import DashboardSkeleton from "../components/DashboardSkeleton";
 import {
   getUserDashboard,
@@ -84,7 +86,7 @@ function GameCard({ game, progress, onPlay, locked, prereqTitle }) {
           <span className="game-icon">{game.emoji}</span>
           <div className="game-header-text">
             <h3 className="game-title">{game.title}</h3>
-            <p className="game-subtitle">Cyber Safety Quiz</p>
+            <p className="game-subtitle">Cyber Quest Quiz</p>
           </div>
           {locked ? (
             <span className="badge badge-locked">Locked</span>
@@ -204,11 +206,11 @@ const quizProgress = useMemo(() => {
 
   const levelLabel = summary
   ? summary.overallPercent === 100
-    ? "Cyber Safety Pro"
+    ? "Cyber Quest Pro"
     : summary.overallPercent >= 50
-    ? "Cyber Safety Explorer"
-    : "Cyber Safety Beginner"
-  : "Cyber Safety Beginner";
+    ? "Cyber Quest Explorer"
+    : "Cyber Quest Beginner"
+  : "Cyber Quest Beginner";
 
   const todaysTip = useMemo(() => {
     if (!CYBER_TIPS.length) return "";
@@ -277,13 +279,25 @@ const quizProgress = useMemo(() => {
         </div>
       </header>
 
+      {/* <header className="site-branding">
+      <div className="brand-left">
+        <img
+          src={cyberQuestLogo}
+          alt="CyberQuest logo"
+          className="brand-logo"
+        />
+        <div className="brand-text">
+          <h1>CyberQuest</h1>
+          <p>Level up your digital defense</p>
+        </div>
+      </div>
+    </header> */}
 
       <section className="section-heading">
          <span className="section-label">
-           🧭 Your Cyber Safety Journey
+           🧭 Your Cyber Quest Journey
          </span>
       </section>
-
 
       <section className="dashboard-row">
           {/* Progress Summary */}
@@ -329,7 +343,7 @@ const quizProgress = useMemo(() => {
           <div className="tip-card">
             <div className="card-title-row">
               <span className="card-icon">💡</span>
-              <h2>Cyber Safety Tip</h2>
+              <h2>Cyber Quest Tip</h2>
             </div>
             <p>{todaysTip}</p>
           </div>
@@ -365,7 +379,6 @@ const quizProgress = useMemo(() => {
             .map((topic) => (
               <TopicProgressCard key={topic.game_id} topic={topic} />
             ))}
-
            </div>
          </section>
 
@@ -379,7 +392,7 @@ const quizProgress = useMemo(() => {
       <div className="info-grid">
         {/* left: checklist */}
         <div className="safety-card">
-          <h2>🛡️ Cyber Safety Checklist</h2>
+          <h2>🛡️ Cyber Quest Checklist</h2>
           <p className="safety-intro">
             Before you go online, remember these smart habits from your lessons.
           </p>
@@ -396,7 +409,7 @@ const quizProgress = useMemo(() => {
 
         {/* right: why it matters */}
         <div className="why-card">
-          <h2>🌍 Why Cyber Safety Matters</h2>
+          <h2>🌍 Why Cyber Quest Portal Matters</h2>
           <p>
             The internet is an amazing place to learn, create, play, and connect
             with others. But just like crossing the street, we need to stay smart
@@ -410,7 +423,7 @@ const quizProgress = useMemo(() => {
 
       {/* Topic description heading */}
       <section className="topic-overview">
-        <h2>🧙‍♂️ Cyber Safety Topics</h2>
+        <h2>🧙‍♂️ Cyber Quest Topics</h2>
         <p className="topic-overview-text">
           These four quizzes match your lesson topics: digital footprints,
           personal information, passwords & passphrases, and social media

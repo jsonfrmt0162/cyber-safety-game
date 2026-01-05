@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import "../styles/Login.css";
 import Toast from "../components/Toast";
 import LoadingOverlay from "../components/LoadingOverlay";
+import cyberQuestLogo from "../assets/cyber_logo.jpeg";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -94,10 +95,22 @@ export default function Auth() {
           {/* LEFT HERO PANEL */}
           <div className="login-hero">
             <div className="login-hero-heading">
-              <h1 className="login-hero-title">
-                <span className="emoji">🛡️</span>
-                Cyber Safety Arcade
-              </h1>
+              <div className="hero-brand-row">
+                <img
+                  src={cyberQuestLogo}
+                  alt="CyberQuest logo"
+                  className="hero-logo"
+                />
+                <div>
+                  <h1 className="login-hero-title">
+                    <span className="emoji">🛡️</span> CyberQuest
+                  </h1>
+                  <p className="login-hero-tagline">
+                    Level up your digital defense
+                  </p>
+                </div>
+              </div>
+  
               <p className="login-hero-subtitle">
                 Log in to keep leveling up your skills in digital footprints,
                 personal information, passwords, and social media safety.
@@ -128,8 +141,17 @@ export default function Auth() {
           {/* RIGHT FORM PANEL */}
           <div className="login-card">
             <div className="login-logo">
-              <span>🎮</span>
-              CYBER SAFETY PORTAL
+              <img
+                src={cyberQuestLogo}
+                alt="CyberQuest logo small"
+                className="login-logo-img"
+              />
+              <div className="login-logo-text">
+                <span className="login-logo-title">CyberQuest</span>
+                <span className="login-logo-subtitle">
+                  Secure Player Portal
+                </span>
+              </div>
             </div>
   
             {/* Toggle tabs */}
@@ -152,12 +174,12 @@ export default function Auth() {
   
             <div>
               <h2 className="login-title">
-                {isLogin ? "Welcome back!" : "Create your player profile"}
+                {isLogin ? "Welcome back, Agent!" : "Create your player profile"}
               </h2>
               <p className="login-subtext">
                 {isLogin
-                  ? "Enter your details to continue your cyber safety journey."
-                  : "Just a few details so we can track your progress and scores."}
+                  ? "Enter your details to continue your CyberQuest journey."
+                  : "Just a few details so we can track your missions and scores."}
               </p>
             </div>
   
@@ -218,11 +240,11 @@ export default function Auth() {
               <button type="submit" className="login-button" disabled={loading}>
                 {loading
                   ? isLogin
-                    ? "Logging you in..."
-                    : "Creating your account..."
+                    ? "Logging you into CyberQuest..."
+                    : "Creating your CyberQuest profile..."
                   : isLogin
-                  ? "Log in"
-                  : "Sign up"}
+                  ? "Enter CyberQuest"
+                  : "Join CyberQuest"}
               </button>
   
               <p className="login-meta">
@@ -232,12 +254,12 @@ export default function Auth() {
             </form>
   
             <p className="signup-text">
-              {isLogin ? "New here? " : "Already have an account? "}
+              {isLogin ? "New recruit? " : "Already have an account? "}
               <span
                 className="signup-link"
                 onClick={() => setIsLogin((prev) => !prev)}
               >
-                {isLogin ? "Create an account" : "Log in instead"}
+                {isLogin ? "Create a CyberQuest account" : "Log in instead"}
               </span>
             </p>
           </div>
@@ -250,7 +272,7 @@ export default function Auth() {
         text={
           isLogin
             ? "Checking your credentials..."
-            : "Setting up your cyber safety profile..."
+            : "Setting up your CyberQuest profile..."
         }
       />
   
@@ -263,4 +285,5 @@ export default function Auth() {
       />
     </>
   );
+  
 }

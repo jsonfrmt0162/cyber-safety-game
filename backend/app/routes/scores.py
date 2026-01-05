@@ -10,9 +10,9 @@ router = APIRouter(prefix="/scores", tags=["Scores"])
 # Game 1: 2 questions -> 20, etc.
 GAME_MAX_SCORES = {
     1: 60,  # My Digital Footprint
-    2: 10,  # Personal Info & Privacy
-    3: 20,  # Passwords & Passphrases
-    4: 20,  # Social Media Safety
+    2: 60,  # Personal Info & Privacy
+    3: 50,  # Passwords & Passphrases
+    4: 60,  # Social Media Safety
 }
 
 

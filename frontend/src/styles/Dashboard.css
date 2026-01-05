@@ -833,3 +833,36 @@
     margin: 0;
   }
   
+  .site-branding {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .brand-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .brand-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.4);
+  }
+  
+  .brand-text h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  
+  .brand-text p {
+    margin: 0.1rem 0 0;
+    font-size: 0.95rem;
+    color: #64748b;
+  }
+  

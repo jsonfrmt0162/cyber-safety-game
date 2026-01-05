@@ -64,15 +64,6 @@
   z-index: 1;
 }
 
-.login-hero-title {
-  font-size: 2rem;
-  line-height: 1.2;
-  font-weight: 800;
-  margin: 0 0 0.4rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
 
 .login-hero-title span.emoji {
   font-size: 1.8rem;
@@ -190,13 +181,6 @@
   box-shadow: 0 4px 10px rgba(33, 75, 137, 0.15);
 }
 
-/* Title & helper text inside the card */
-.login-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0.6rem 0 0.15rem;
-  color: #172746;
-}
 
 .login-subtext {
   font-size: 0.9rem;
@@ -293,4 +277,104 @@
   .login-card {
     padding: 2.25rem 1.5rem 2rem;
   }
+}
+
+.login-card {
+  /* keep your existing styles, just ensure: */
+  align-items: stretch;
+}
+
+.login-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.login-heading-text {
+  text-align: left;
+}
+
+.login-title {
+  margin: 0;
+  font-size: 1.9rem;
+  letter-spacing: 0.03em;
+  color: #0f172a;
+}
+
+.login-subtitle {
+  margin: 0.1rem 0 0.2rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.login-mode {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f97316;
+}
+
+.hero-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.hero-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  box-shadow: 0 12px 35px rgba(15, 23, 42, 0.55);
+}
+
+.login-hero-title {
+  margin: 0;
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #0f172a;
+}
+
+.login-hero-tagline {
+  margin: 0.1rem 0 0;
+  font-size: 0.95rem;
+  color: #052d65;
+}
+
+/* right-side mini brand in the card */
+.login-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+}
+
+.login-logo-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.4);
+}
+
+.login-logo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.login-logo-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0f172a;
+}
+
+.login-logo-subtitle {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #9ca3af;
 }

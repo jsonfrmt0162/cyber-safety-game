@@ -42,6 +42,9 @@ export default function PhishBlasterGame({ userId, gameId }) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
 
+  // NEW: Mission briefing visibility
+  const [showGuide, setShowGuide] = useState(true);
+
   // simple player state
   const [playerX, setPlayerX] = useState(GAME_WIDTH / 2);
   const playerY = GAME_HEIGHT - 80;
@@ -380,6 +383,11 @@ export default function PhishBlasterGame({ userId, gameId }) {
     setRunning(true);
   };
 
+  const handleStartFromGuide = () => {
+    setShowGuide(false);
+    startGame();
+  };
+
   // ========= UI =========
   return (
     <div style={styles.wrapper}>
@@ -408,6 +416,14 @@ export default function PhishBlasterGame({ userId, gameId }) {
           />
 
           <div style={styles.instructions}>
+            <strong>Mission goal:</strong> Spot and blast{" "}
+            <span style={{ color: "#f97316" }}>phishing messages</span> before
+            they reach your ship. Keep{" "}
+            <span style={{ color: "#22c55e" }}>safe messages</span> intact.
+            Earn points, protect your hearts, and rank up from Cadet to
+            Guardian!
+            <br />
+            <br />
             <strong>Controls:</strong> Use <kbd>A</kbd>/<kbd>D</kbd> or arrow
             keys to move. Press <kbd>Space</kbd> to shoot the{" "}
             <span style={{ color: "#f97316" }}>phishing rocks (red)</span>. Don’t
@@ -416,7 +432,7 @@ export default function PhishBlasterGame({ userId, gameId }) {
 
           <div style={styles.buttonsRow}>
             {!running && !gameOver && (
-              <button style={styles.primaryButton} onClick={startGame}>
+              <button style={styles.primaryButton} onClick={() => setShowGuide(true)}>
                 🚀 Start mission
               </button>
             )}
@@ -426,12 +442,20 @@ export default function PhishBlasterGame({ userId, gameId }) {
               </button>
             )}
             {running && (
-              <button
-                style={styles.secondaryButton}
-                onClick={() => setRunning(false)}
-              >
-                ⏸ Pause
-              </button>
+              <>
+                <button
+                  style={styles.secondaryButton}
+                  onClick={() => setRunning(false)}
+                >
+                  ⏸ Pause
+                </button>
+                <button
+                  style={styles.ghostButton}
+                  onClick={() => setShowGuide(true)}
+                >
+                  ❓ How to play
+                </button>
+              </>
             )}
           </div>
 
@@ -452,11 +476,58 @@ export default function PhishBlasterGame({ userId, gameId }) {
                   </li>
                   <li>
                     Always check the message carefully before you “shoot” (click).
+                    If you’re unsure, ask a trusted adult.
                   </li>
                 </ul>
 
                 <button style={styles.primaryButton} onClick={startGame}>
                   Play again
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* === Mission briefing modal === */}
+          {showGuide && (
+            <div style={styles.guideOverlay}>
+              <div style={styles.guideCard} onClick={(e) => e.stopPropagation()}>
+                <h2 style={{ marginTop: 0 }}>🎯 Mission Briefing</h2>
+                <p>
+                  You are the captain of the <strong>Cyber Quest Starship</strong>.
+                  Space is full of messages—some are safe, but some are dangerous
+                  phishing scams.
+                </p>
+                <h3 style={styles.guideSubTitle}>Your goal</h3>
+                <ul style={styles.tipList}>
+                  <li>
+                    Blast <strong>red rocks</strong> with scammy messages like
+                    “FREE ROBUX NOW!” or “You won a prize!”.
+                  </li>
+                  <li>
+                    Avoid hitting <strong>green rocks</strong> with safe messages
+                    like updates or school websites.
+                  </li>
+                  <li>
+                    Each phishing rock you blast earns points. Hitting safe rocks
+                    or letting phishing reach your ship costs hearts.
+                  </li>
+                  <li>
+                    The longer you survive, the faster the rocks fall. Stay alert
+                    and keep your rank climbing!
+                  </li>
+                </ul>
+                <h3 style={styles.guideSubTitle}>Cyber Quest tip</h3>
+                <p>
+                  In real life, phishing messages often:
+                  <br />– Promise rewards or free items
+                  <br />– Try to scare you into clicking quickly
+                  <br />– Ask for passwords or personal info
+                  <br />
+                  When you see messages like that, <strong>don’t click</strong>.
+                  Tell a trusted adult or check the official app/website instead.
+                </p>
+                <button style={styles.primaryButton} onClick={handleStartFromGuide}>
+                  Got it – start mission 🚀
                 </button>
               </div>
             </div>
@@ -587,6 +658,15 @@ const styles = {
     color: "#e5e7eb",
     cursor: "pointer",
   },
+  ghostButton: {
+    borderRadius: 999,
+    border: "none",
+    padding: "0.55rem 1.4rem",
+    background: "rgba(15,23,42,0.8)",
+    color: "#e5e7eb",
+    cursor: "pointer",
+    fontSize: 12,
+  },
   overlay: {
     position: "absolute",
     inset: 0,
@@ -643,5 +723,29 @@ const styles = {
   leaderScore: {
     fontSize: 12,
     color: "#6b7280",
+  },
+  // Mission guide modal
+  guideOverlay: {
+    position: "absolute",
+    inset: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "rgba(15,23,42,0.78)",
+    zIndex: 10,
+  },
+  guideCard: {
+    background: "#f9fafb",
+    borderRadius: 20,
+    padding: "1.5rem 1.7rem",
+    maxWidth: 520,
+    color: "#111827",
+    boxShadow: "0 20px 40px rgba(15,23,42,0.5)",
+    fontSize: 14,
+  },
+  guideSubTitle: {
+    fontSize: "0.95rem",
+    marginBottom: "0.3rem",
+    marginTop: "0.9rem",
   },
 };
