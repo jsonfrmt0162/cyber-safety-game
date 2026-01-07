@@ -968,6 +968,719 @@ const RANK_TIERS = [
   { threshold: 80, label: "Guardian" },
 ];
 
+
+function DigitalFootprintMiniGame() {
+    const pairs = [
+      {
+        id: "id-photo",
+        front: "Post school ID photo",
+        back: "Shows full name & school → identity theft risk",
+      },
+      {
+        id: "live-loc",
+        front: "Share live location in story",
+        back: "Strangers can track where you are in real time",
+      },
+      {
+        id: "delete-post",
+        front: "Delete old oversharing post",
+        back: "Might still exist in screenshots or backups",
+      },
+    ];
+  
+    const buildDeck = () =>
+      [...pairs]
+        .flatMap((p) => [
+          { uid: p.id + "-a", pairId: p.id, label: p.front },
+          { uid: p.id + "-b", pairId: p.id, label: p.back },
+        ])
+        .sort(() => Math.random() - 0.5);
+  
+    const [cards, setCards] = useState(buildDeck);
+    const [flipped, setFlipped] = useState([]); // indices
+    const [matched, setMatched] = useState([]); // pairIds
+    const [moves, setMoves] = useState(0);
+    const [done, setDone] = useState(false);
+  
+    const handleFlip = (index) => {
+      if (done) return;
+      if (flipped.includes(index)) return;
+  
+      const card = cards[index];
+      if (!card || matched.includes(card.pairId)) return;
+  
+      if (flipped.length === 0) {
+        setFlipped([index]);
+        return;
+      }
+  
+      if (flipped.length === 1) {
+        const firstIndex = flipped[0];
+        const firstCard = cards[firstIndex];
+        const secondCard = cards[index];
+        setFlipped([firstIndex, index]);
+        setMoves((m) => m + 1);
+  
+        setTimeout(() => {
+          if (!firstCard || !secondCard) return;
+  
+          if (firstCard.pairId === secondCard.pairId) {
+            setMatched((prev) => {
+              const updated = [...prev, firstCard.pairId];
+              if (updated.length === pairs.length) setDone(true);
+              return updated;
+            });
+            setFlipped([]);
+          } else {
+            setFlipped([]);
+          }
+        }, 650);
+      }
+    };
+  
+    const restart = () => {
+      setCards(buildDeck());
+      setFlipped([]);
+      setMatched([]);
+      setMoves(0);
+      setDone(false);
+    };
+  
+    return (
+      <div className="mini-game-wrapper">
+        <h2 className="mini-title">🧠 Digital Footprint Memory Lab</h2>
+        <p className="mini-desc">
+          Match each <strong>online action</strong> with its{" "}
+          <strong>cybersecurity effect</strong>. This shows how small posts can
+          create a big digital footprint.
+        </p>
+  
+        <div className="mini-game-hud">
+          <div>
+            Pairs matched: <strong>{matched.length}</strong> / {pairs.length}
+          </div>
+          <div>
+            Moves: <strong>{moves}</strong>
+          </div>
+          <button className="mini-restart-btn" type="button" onClick={restart}>
+            🔁 Shuffle cards
+          </button>
+        </div>
+  
+        <div className="mini-game-grid">
+          {cards.map((c, idx) => {
+            const isFlipped = flipped.includes(idx) || matched.includes(c.pairId);
+  
+            return (
+              <button
+                key={c.uid}
+                type="button"
+                className={`mini-card ${isFlipped ? "flipped" : ""} ${
+                  matched.includes(c.pairId) ? "matched" : ""
+                }`}
+                onClick={() => handleFlip(idx)}
+              >
+                <div className="mini-card-inner">
+                  <div className="mini-card-front">?</div>
+                  <div className="mini-card-back">{c.label}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+  
+        {done && (
+          <div className="mini-complete-banner">
+            🎉 Nice! You connected actions and consequences. Your digital footprint
+            makes a story—make sure it’s a safe one.
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function PersonalInfoMiniGame() {
+    const SCENES = [
+      {
+        id: 1,
+        text: "A stranger in a game chat asks for your full name and school so you can 'join their secret team.'",
+        safeAnswer: "shield",
+        hint: "Strangers online should never know your real identity or school.",
+      },
+      {
+        id: 2,
+        text: "Your teacher, during online class, asks for your school email to send the quiz link.",
+        safeAnswer: "share",
+        hint: "Trusted adults from school may need limited info for class.",
+      },
+      {
+        id: 3,
+        text: "A pop-up website says: 'Win a free phone! Just enter your birthday and home address.'",
+        safeAnswer: "shield",
+        hint: "If it sounds too good to be true, it probably is.",
+      },
+      {
+        id: 4,
+        text: "An official banking app you installed asks for a one-time code you requested.",
+        safeAnswer: "share",
+        hint: "One-time codes are okay if YOU started the login or transaction.",
+      },
+      {
+        id: 5,
+        text: "A new online friend wants your exact location so they can 'visit someday.'",
+        safeAnswer: "shield",
+        hint: "Never share your real-time location with people you don’t know offline.",
+      },
+    ];
+  
+    const [index, setIndex] = useState(0);
+    const [score, setScore] = useState(0);
+    const [hearts, setHearts] = useState(3);
+    const [feedback, setFeedback] = useState(null); // {type, text}
+    const [finished, setFinished] = useState(false);
+  
+    const current = SCENES[index];
+  
+    const handleChoice = (choice) => {
+      if (!current || finished) return;
+  
+      const correct = choice === current.safeAnswer;
+  
+      if (correct) {
+        setScore((s) => s + 150);
+        setFeedback({
+          type: "correct",
+          text: "Nice! You kept your treasure safe. 🛡️",
+        });
+      } else {
+        setHearts((h) => Math.max(0, h - 1));
+        setFeedback({
+          type: "wrong",
+          text: "Careful! That move could expose your personal info. ⚠️",
+        });
+      }
+  
+      setTimeout(() => {
+        setFeedback(null);
+  
+        // end if last scene or no hearts left
+        if (index === SCENES.length - 1 || (choice !== current.safeAnswer && hearts - 1 <= 0)) {
+          setFinished(true);
+        } else {
+          setIndex((i) => i + 1);
+        }
+      }, 900);
+    };
+  
+    const restart = () => {
+      setIndex(0);
+      setScore(0);
+      setHearts(3);
+      setFeedback(null);
+      setFinished(false);
+    };
+  
+    const progressPercent = Math.round(((index + (finished ? 1 : 0)) / SCENES.length) * 100);
+  
+    return (
+      <div className="mini-game-wrapper info-guardian">
+        <div className="mini-header-row">
+          <h2 className="mini-title">🪙 Info Guardian: Share or Shield?</h2>
+          <button className="mini-restart-link" type="button" onClick={restart}>
+            🔁 Restart
+          </button>
+        </div>
+  
+        <p className="mini-desc">
+          Decide if you should <strong>SHARE</strong> a small detail or completely{" "}
+          <strong>SHIELD</strong> it. Protect your treasure chest of personal data!
+        </p>
+  
+        <div className="info-hud">
+          <div className="info-score">
+            Score: <span>{score}</span>
+          </div>
+          <div className="info-hearts">
+            {"❤️".repeat(hearts)}
+            {"🖤".repeat(3 - hearts)}
+          </div>
+          <div className="info-progress-bar">
+            <div
+              className="info-progress-fill"
+              style={{ width: `${Math.min(progressPercent, 100)}%` }}
+            />
+          </div>
+        </div>
+  
+        {!finished && current && (
+          <div className="info-card">
+            <div className="info-tag-row">
+              <span className="info-tag">Scenario {index + 1}</span>
+            </div>
+            <p className="info-question">{current.text}</p>
+  
+            <div className="info-actions">
+              <button
+                type="button"
+                className="info-btn shield"
+                onClick={() => handleChoice("shield")}
+              >
+                🛡 Shield it
+                <span className="info-btn-sub">Keep this private</span>
+              </button>
+              <button
+                type="button"
+                className="info-btn share"
+                onClick={() => handleChoice("share")}
+              >
+                📤 Safe share
+                <span className="info-btn-sub">Okay in this context</span>
+              </button>
+            </div>
+  
+            <p className="info-hint">💡 Hint: {current.hint}</p>
+  
+            {feedback && (
+              <div
+                className={`info-feedback ${
+                  feedback.type === "correct" ? "info-feedback-correct" : "info-feedback-wrong"
+                }`}
+              >
+                {feedback.text}
+              </div>
+            )}
+          </div>
+        )}
+  
+        {finished && (
+          <div className="mini-complete-banner info-complete">
+            <h3>Game Over! 🧠</h3>
+            <p>
+              Final score: <strong>{score}</strong>
+            </p>
+            <p>
+              Remember: if you’re not sure, <strong>shield it</strong> and ask a trusted adult
+              first.
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+  
+  
+  function PasswordsMiniGame() {
+    const MISSIONS = [
+      {
+        id: 1,
+        title: "Secure your game account",
+        prompt: "Your friend uses 'gamer123'. Build something much stronger.",
+      },
+      {
+        id: 2,
+        title: "Protect your school portal",
+        prompt: "Teachers warn about reused passwords. Make a unique passphrase.",
+      },
+      {
+        id: 3,
+        title: "Lock down your email",
+        prompt: "This account controls everything. Make it ultra-strong.",
+      },
+    ];
+  
+    const words = ["Tiger", "Rainbow", "Galaxy", "Pineapple", "Robot", "Storm"];
+    const numbers = ["2024", "99", "42", "07", "3000"];
+    const symbols = ["!", "@", "#", "✨", "?"];
+  
+    const [missionIndex, setMissionIndex] = useState(0);
+    const [selected, setSelected] = useState([]);
+    const [locked, setLocked] = useState(false);
+    const [missionComplete, setMissionComplete] = useState(false);
+  
+    const mission = MISSIONS[missionIndex];
+    const password = selected.join("");
+  
+    const hasWord = words.some((w) => password.includes(w));
+    const hasNumber = numbers.some((n) => password.includes(n));
+    const hasSymbol = symbols.some((s) => password.includes(s));
+    const longEnough = password.length >= 12;
+  
+    const criteria = [
+      { label: "Uses at least one word", ok: hasWord },
+      { label: "Contains numbers", ok: hasNumber },
+      { label: "Includes symbols", ok: hasSymbol },
+      { label: "12 or more characters", ok: longEnough },
+    ];
+  
+    const strengthScore =
+      (hasWord ? 1 : 0) + (hasNumber ? 1 : 0) + (hasSymbol ? 1 : 0) + (longEnough ? 1 : 0);
+  
+    const strengthLabel =
+      strengthScore <= 1
+        ? "Weak"
+        : strengthScore === 2
+        ? "Okay"
+        : strengthScore === 3
+        ? "Strong"
+        : "Ultra-Strong";
+  
+    const toggleToken = (token) => {
+      if (locked) return;
+      setSelected((prev) =>
+        prev.includes(token) ? prev.filter((t) => t !== token) : [...prev, token]
+      );
+    };
+  
+    const lockMission = () => {
+      if (strengthScore < 3) return;
+      setLocked(true);
+      setMissionComplete(true);
+    };
+  
+    const nextMission = () => {
+      if (missionIndex < MISSIONS.length - 1) {
+        setMissionIndex((i) => i + 1);
+        setSelected([]);
+        setLocked(false);
+        setMissionComplete(false);
+      }
+    };
+  
+    const resetAll = () => {
+      setMissionIndex(0);
+      setSelected([]);
+      setLocked(false);
+      setMissionComplete(false);
+    };
+  
+    const allDone = missionIndex === MISSIONS.length - 1 && missionComplete;
+  
+    return (
+      <div className="mini-game-wrapper pass-lab">
+        <div className="mini-header-row">
+          <h2 className="mini-title">🔐 Password Mission Lab</h2>
+          <button className="mini-restart-link" type="button" onClick={resetAll}>
+            🔁 Restart missions
+          </button>
+        </div>
+  
+        <div className="mission-header">
+          <span className="mission-pill">
+            Mission {missionIndex + 1} of {MISSIONS.length}
+          </span>
+          <h3 className="mission-title">{mission.title}</h3>
+          <p className="mission-prompt">{mission.prompt}</p>
+        </div>
+  
+        <div className="pass-lab-output">
+          <div className="pass-label">Your passphrase:</div>
+          <div className="pass-value">
+            {password || <span className="placeholder">Click tiles to build it…</span>}
+          </div>
+        </div>
+  
+        <div className="pass-strength-row">
+          <span>Strength:</span>
+          <div className={`pass-strength-badge level-${strengthScore}`}>
+            {strengthLabel}
+          </div>
+          <div className="pass-strength-bar">
+            <div
+              className="pass-strength-fill"
+              style={{ width: `${(strengthScore / 4) * 100}%` }}
+            />
+          </div>
+        </div>
+  
+        <div className="pass-criteria">
+          {criteria.map((c) => (
+            <div
+              key={c.label}
+              className={`criteria-item ${c.ok ? "ok" : ""}`}
+            >
+              {c.ok ? "✅" : "⬜"} {c.label}
+            </div>
+          ))}
+        </div>
+  
+        <div className="pass-token-row">
+          <div className="token-group">
+            <div className="token-group-label">Words</div>
+            <div className="token-grid">
+              {words.map((w) => (
+                <button
+                  key={w}
+                  type="button"
+                  className={`token-chip ${selected.includes(w) ? "selected" : ""}`}
+                  onClick={() => toggleToken(w)}
+                >
+                  {w}
+                </button>
+              ))}
+            </div>
+          </div>
+  
+          <div className="token-group">
+            <div className="token-group-label">Numbers</div>
+            <div className="token-grid">
+              {numbers.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={`token-chip ${selected.includes(n) ? "selected" : ""}`}
+                  onClick={() => toggleToken(n)}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+  
+          <div className="token-group">
+            <div className="token-group-label">Symbols</div>
+            <div className="token-grid">
+              {symbols.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={`token-chip ${selected.includes(s) ? "selected" : ""}`}
+                  onClick={() => toggleToken(s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+  
+        <div className="pass-actions">
+          {!missionComplete && (
+            <button
+              type="button"
+              className="mini-primary-btn"
+              onClick={lockMission}
+              disabled={strengthScore < 3}
+            >
+              🔒 Lock this password
+            </button>
+          )}
+  
+          {missionComplete && !allDone && (
+            <button type="button" className="mini-primary-btn" onClick={nextMission}>
+              ▶ Next mission
+            </button>
+          )}
+        </div>
+  
+        {allDone && (
+          <div className="mini-complete-banner">
+            🎉 Mission complete! You built strong passwords for all your key accounts.  
+            Never reuse them on different websites.
+          </div>
+        )}
+      </div>
+    );
+  }
+  
+
+  function SocialMediaMiniGame() {
+    const [isPublic, setIsPublic] = useState(false);
+    const [showLocation, setShowLocation] = useState(false);
+    const [dmsOpen, setDmsOpen] = useState(true);
+  
+    const riskPoints =
+      (isPublic ? 2 : 0) + (showLocation ? 2 : 0) + (dmsOpen ? 1 : 0);
+  
+    const riskLabel =
+      riskPoints <= 1
+        ? "Low"
+        : riskPoints <= 3
+        ? "Medium"
+        : "High";
+  
+    const riskEmoji =
+      riskLabel === "Low" ? "😌" : riskLabel === "Medium" ? "😬" : "😱";
+  
+    const safeSetup = riskPoints <= 1;
+  
+    return (
+      <div className="mini-game-wrapper privacy-sim">
+        <h2 className="mini-title">📱 Social Media Privacy Simulator</h2>
+        <p className="mini-desc">
+          Change your settings and see what <strong>strangers</strong> vs{" "}
+          <strong>friends</strong> can see. Try to keep the risk meter low!
+        </p>
+  
+        <div className="privacy-layout">
+          {/* PHONE PREVIEW */}
+          <div className="phone-preview">
+            <div className="phone-header">
+              <span className="phone-name">@you</span>
+              <span
+                className={`phone-badge ${
+                  isPublic ? "public" : "private"
+                }`}
+              >
+                {isPublic ? "Public" : "Private"}
+              </span>
+            </div>
+  
+            <div className="phone-post">
+              <div className="phone-avatar">🧑‍💻</div>
+              <div className="phone-post-body">
+                <div className="phone-line">Hanging out after school!</div>
+                {showLocation && (
+                  <div className="phone-line small">
+                    📍 Live near: <strong>Your City</strong>
+                  </div>
+                )}
+                {isPublic ? (
+                  <div className="phone-line small">
+                    🌍 Visible to <strong>anyone</strong> on the internet
+                  </div>
+                ) : (
+                  <div className="phone-line small">
+                    👀 Visible to <strong>approved followers only</strong>
+                  </div>
+                )}
+              </div>
+            </div>
+  
+            <div className="phone-inbox">
+              <div className="phone-inbox-header">Inbox</div>
+              <div className="phone-inbox-row">
+                <span>👤</span>
+                <span className="phone-inbox-text">
+                  {dmsOpen
+                    ? "Random account: hey, wanna chat? 👀"
+                    : "Only friends can send you messages."}
+                </span>
+              </div>
+            </div>
+          </div>
+  
+          {/* CONTROLS + RISK METER */}
+          <div className="privacy-controls">
+            <div className="privacy-setting">
+              <div className="privacy-label">Profile Visibility</div>
+              <p className="privacy-help">
+                Public lets anyone see your posts. Private limits this to followers.
+              </p>
+              <div className="toggle-row">
+                <button
+                  type="button"
+                  className={`toggle-pill ${!isPublic ? "active" : ""}`}
+                  onClick={() => setIsPublic(false)}
+                >
+                  🔒 Private
+                </button>
+                <button
+                  type="button"
+                  className={`toggle-pill ${isPublic ? "active" : ""}`}
+                  onClick={() => setIsPublic(true)}
+                >
+                  🌍 Public
+                </button>
+              </div>
+            </div>
+  
+            <div className="privacy-setting">
+              <div className="privacy-label">Location Sharing</div>
+              <p className="privacy-help">
+                Live location can show strangers where you are right now.
+              </p>
+              <div className="toggle-row">
+                <button
+                  type="button"
+                  className={`toggle-pill ${!showLocation ? "active" : ""}`}
+                  onClick={() => setShowLocation(false)}
+                >
+                  🚫 Off
+                </button>
+                <button
+                  type="button"
+                  className={`toggle-pill ${showLocation ? "active" : ""}`}
+                  onClick={() => setShowLocation(true)}
+                >
+                  📍 On
+                </button>
+              </div>
+            </div>
+  
+            <div className="privacy-setting">
+              <div className="privacy-label">Direct Messages</div>
+              <p className="privacy-help">
+                Allowing anyone to DM you can invite spam or creepy messages.
+              </p>
+              <div className="toggle-row">
+                <button
+                  type="button"
+                  className={`toggle-pill ${!dmsOpen ? "active" : ""}`}
+                  onClick={() => setDmsOpen(false)}
+                >
+                  ✅ Friends only
+                </button>
+                <button
+                  type="button"
+                  className={`toggle-pill ${dmsOpen ? "active" : ""}`}
+                  onClick={() => setDmsOpen(true)}
+                >
+                  📥 Anyone
+                </button>
+              </div>
+            </div>
+  
+            <div className="risk-meter">
+              <div className="risk-label-row">
+                <span>Risk level</span>
+                <span className={`risk-tag risk-${riskLabel.toLowerCase()}`}>
+                  {riskEmoji} {riskLabel}
+                </span>
+              </div>
+              <div className="risk-bar">
+                <div
+                  className="risk-fill"
+                  style={{ width: `${(riskPoints / 5) * 100}%` }}
+                />
+              </div>
+  
+              {safeSetup ? (
+                <p className="mini-hint good">
+                  🎉 Great! You’re keeping your posts and DMs under control.
+                </p>
+              ) : (
+                <p className="mini-hint">
+                  Hint: Try turning off live location and limiting who can DM you.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  
+
+function TopicMiniGame({ topicId }) {
+    switch (topicId) {
+      case 1:
+        return <DigitalFootprintMiniGame />;
+      case 2:
+        return <PersonalInfoMiniGame />;
+      case 3:
+        return <PasswordsMiniGame />;
+      case 4:
+        return <SocialMediaMiniGame />;
+      default:
+        return (
+          <div className="mini-game-wrapper">
+            <p>Mini-game for this chapter is coming soon. 🚧</p>
+          </div>
+        );
+    }
+  }
+
 // -------------------- COMPONENT -------------------- //
 
 export default function Game() {
@@ -1439,8 +2152,9 @@ export default function Game() {
           )}
 
         {mode === "minigame" && (
-          <MiniGame topicId={numericGameId} />
+          <TopicMiniGame topicId={numericGameId} />
         )}
+
 
 
           {/* QUIZ MODE: game-style quiz presentation */}
