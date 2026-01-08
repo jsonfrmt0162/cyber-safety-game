@@ -379,38 +379,38 @@ const LESSON_INTRO = {
   1: {
     title: "My Digital Footprint",
     text: [
-      "Every post, like, and app you use leaves a tiny trail behind you.",
-      "Those trails can be saved, shared, or screenshotted—even if you delete them.",
-      "Today’s quest: learn how to leave smart, safe footprints online.",
+      "Everything you do online leaves tiny footprints behind—just like walking on the beach! These footprints show where you’ve been, what you’ve liked, and what you’ve shared.",
+      "Every photo you post on Instagram, comment you make on TikTok, or message you send in a game chat becomes part of your online record.",
+      "Whether you’re sharing a meme, posting a selfie, or chatting with friends in a game, remember: your online footprints can travel far and last a long time. So make sure they lead to something positive, kind, and something you’ll be proud of!",
     ],
-    quickTip: "Think before you post and ask a guardian if you’re unsure.",
+    quickTip: "Think before posting online and ask a guardian if you’re unsure.",
   },
   2: {
     title: "Personal Information = Treasure",
     text: [
-      "Your name, birthday, school, and passwords are like gold in a treasure chest.",
-      "Scammers and hackers try tricks to get you to hand that treasure over.",
-      "Your mission: spot which questions are safe and which are traps.",
+      "Your personal information is like the treasure inside your own chest — special and valuable!",
+      "Things like your name, birthday, address, school, and passwords are pieces of that treasure.",
+      "You are the guardian of your treasure, and sneaky pirates (strangers online) might try to steal it. Never share your treasure with someone you don’t know, and only show it to people you trust, like a parent, guardian, or teacher.",
     ],
-    quickTip: "When in doubt, don’t share—ask a trusted adult first.",
+    quickTip: "Keep your personal info safe — ask your parent/guardian before sharing anything online.",
   },
   3: {
     title: "Passwords & Passphrases",
     text: [
-      "Passwords are the locks that guard your accounts and loot.",
-      "Weak passwords are like paper doors—easy for attackers to break.",
+      "Think of your online accounts like a magical castle — full of important things that only you should see.",
+      "Passwords are the strong doors and secret codes that keep your castle safe. A weak password is like a door that swings open easily, letting sneaky intruders in.",
       "We’ll build strong passphrases that are hard to guess but easy to remember.",
     ],
-    quickTip: "Use long, unique passphrases instead of short, simple words.",
+    quickTip: "Use strong passwords and never share them — let your parent/guardian help you manage them.",
   },
   4: {
     title: "Social Media & Privacy",
     text: [
-      "Your social media profile is like your own digital house.",
-      "Public doors let anyone peek inside; private doors let you choose who visits.",
-      "We’ll practice using privacy settings and friend requests wisely.",
+      "All your pictures, messages, and game scores are your toys. You get to choose who can play with your toys and who can’t.",
+      "Privacy settings are like the lid on your toy box — they keep strangers from grabbing your toys.",
+      "Only let people you trust, like family or friends, see your stuff.",
     ],
-    quickTip: "If you don’t know them in real life, you don’t have to let them in.",
+    quickTip: "Check your privacy settings with a guardian and only connect with people you know.",
   },
 };
 
