@@ -116,7 +116,7 @@ export default function PhishBlasterGame({ userId, gameId }) {
     const spawnRock = () => {
       const isBad = Math.random() < 0.55; // more bad than good
       const type = isBad ? ROCK_TYPES.BAD : ROCK_TYPES.GOOD;
-      const speed = isBad ? 0.7 + difficulty * 0.4 : 0.4 + difficulty * 0.35;
+      const speed = isBad ? 0.3 + difficulty * 0.1 : 0.1 + difficulty * 0.35;
       const textOptionsBad = [
         "FREE ROBUX NOW!",
         "YOU WON A PRIZE!",
@@ -301,7 +301,7 @@ export default function PhishBlasterGame({ userId, gameId }) {
       rocks.forEach((r) => {
         ctx.save();
         ctx.translate(r.x, r.y);
-        ctx.rotate(((r.y + tick) / 80) % (Math.PI * 2));
+       // ctx.rotate(((r.y + tick) / 80) % (Math.PI * 2));
         ctx.fillStyle = r.type === ROCK_TYPES.BAD ? "#ef4444" : "#22c55e";
         ctx.beginPath();
         ctx.moveTo(-r.radius, -r.radius / 2);

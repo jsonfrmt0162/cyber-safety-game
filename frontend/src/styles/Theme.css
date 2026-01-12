@@ -1,0 +1,112 @@
+/* src/styles/theme.css */
+:root {
+    /* Core background */
+    --cq-bg-0: #050816;     /* deep space */
+    --cq-bg-1: #071126;     /* slightly lighter */
+    --cq-surface: rgba(255, 255, 255, 0.06);
+    --cq-surface-2: rgba(255, 255, 255, 0.09);
+    --cq-border: rgba(148, 163, 184, 0.25);
+  
+    /* Logo accents (CyberQuest) */
+    --cq-cyan: #22d3ee;     /* neon cyan */
+    --cq-teal: #2dd4bf;     /* teal glow */
+    --cq-purple: #a855f7;   /* neon purple */
+    --cq-blue: #60a5fa;
+  
+    /* Text */
+    --cq-text: #e5e7eb;
+    --cq-muted: rgba(229, 231, 235, 0.75);
+  
+    /* Status */
+    --cq-success: #22c55e;
+    --cq-danger: #ef4444;
+    --cq-warning: #f59e0b;
+  
+    /* Shadow/glow */
+    --cq-shadow: 0 25px 70px rgba(0, 0, 0, 0.55);
+    --cq-glow-cyan: 0 0 24px rgba(34, 211, 238, 0.25);
+    --cq-glow-purple: 0 0 24px rgba(168, 85, 247, 0.22);
+  
+    /* Radius */
+    --cq-radius: 22px;
+  }
+  
+  html, body {
+    height: 100%;
+  }
+  
+  body {
+    margin: 0;
+    color: var(--cq-text);
+    background:
+      radial-gradient(900px 420px at 20% 10%, rgba(34,211,238,0.18), transparent 60%),
+      radial-gradient(900px 420px at 80% 30%, rgba(168,85,247,0.16), transparent 65%),
+      radial-gradient(900px 520px at 50% 110%, rgba(45,212,191,0.10), transparent 55%),
+      linear-gradient(180deg, var(--cq-bg-0), var(--cq-bg-1));
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  }
+  
+  .cq-card {
+    background: var(--cq-surface);
+    border: 1px solid var(--cq-border);
+    border-radius: var(--cq-radius);
+    box-shadow: var(--cq-shadow);
+    backdrop-filter: blur(10px);
+  }
+  
+  .cq-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 0.7rem 1.15rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.2s ease;
+  }
+  
+  .cq-btn:active {
+    transform: translateY(1px);
+  }
+  
+  .cq-btn-primary {
+    color: #06121f;
+    background: linear-gradient(135deg, var(--cq-cyan), var(--cq-purple));
+    box-shadow: var(--cq-glow-cyan), var(--cq-glow-purple);
+  }
+  
+  .cq-btn-ghost {
+    color: var(--cq-text);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(148,163,184,0.25);
+  }
+  
+  .cq-link {
+    color: var(--cq-cyan);
+    font-weight: 700;
+    cursor: pointer;
+  }
+  
+  .cq-input {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    border: 1px solid rgba(148,163,184,0.25);
+    background: rgba(2, 6, 23, 0.35);
+    color: var(--cq-text);
+    outline: none;
+  }
+  
+  .cq-input:focus {
+    border-color: rgba(34,211,238,0.55);
+    box-shadow: 0 0 0 4px rgba(34,211,238,0.12);
+  }
+  
+  .cq-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(148,163,184,0.22);
+  }
+  

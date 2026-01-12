@@ -4,6 +4,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { submitScore, getGameLeaderboard, getGames } from "../services/api";
 import "../styles/Game.css";
 import useTextToSpeech from "../hooks/useTextToSpeech";
+import {
+    DigitalFootprintJourney2D,
+    PersonalInfoJourney2D,
+    PasswordsJourney2D,
+    SocialMediaJourney2D,
+  } from "./TopicJourneyMiniGame";
 
 // -------------------- STATIC CONTENT -------------------- //
 
@@ -1662,16 +1668,16 @@ function DigitalFootprintMiniGame() {
   
   
 
-function TopicMiniGame({ topicId }) {
+  function TopicMiniGame({ topicId, userId, gameId, onScoreSaved }) {
     switch (topicId) {
       case 1:
-        return <DigitalFootprintMiniGame />;
+        return <DigitalFootprintJourney2D userId={userId} gameId={gameId} onScoreSave={onScoreSaved} embedded={true} />;
       case 2:
-        return <PersonalInfoMiniGame />;
+        return <PersonalInfoJourney2D userId={userId} gameId={gameId} onScoreSave={onScoreSaved} embedded={true}  />;
       case 3:
-        return <PasswordsMiniGame />;
+        return <PasswordsJourney2D userId={userId} gameId={gameId} onScoreSave={onScoreSaved} embedded={true} />;
       case 4:
-        return <SocialMediaMiniGame />;
+        return <SocialMediaJourney2D userId={userId} gameId={gameId} onScoreSave={onScoreSaved} embedded={true} />;
       default:
         return (
           <div className="mini-game-wrapper">
