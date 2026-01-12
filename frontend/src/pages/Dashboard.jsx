@@ -450,7 +450,7 @@ const quizProgress = useMemo(() => {
                 const prevGame = arr[index - 1];
                 const prevProgress = getProgressForGame(prevGame.id);
                 if (!prevProgress || prevProgress.percent < 100) {
-                  locked = true;
+                  locked = false;
                   prereqTitle = prevGame.title;
                 }
               }
