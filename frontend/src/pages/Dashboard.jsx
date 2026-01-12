@@ -246,8 +246,13 @@ const quizProgress = useMemo(() => {
       {/* Header */}
       <header className="dashboard-header kids-header">
       <div className="header-left">
-       <div className="shield-circle">🛡️</div>
+       <div className="shield-circle"><img
+                  src={cyberQuestLogo}
+                  alt="CyberQuest logo"
+                  className="hero-logo"
+                /></div>
        <div>
+        <div></div>
          <h1>Hello, {user.username}!</h1>
          <p>
            Age: {user.age} · Global Score: <strong>{user.high_score ?? 0}</strong>

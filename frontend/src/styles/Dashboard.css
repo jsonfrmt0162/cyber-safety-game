@@ -11,16 +11,6 @@
     --cq-white: #FFFFFF;
   }
 
-  .dashboard-page,
-.dashboard-container {
-  background:
-    radial-gradient(900px circle at 15% 12%, rgba(25, 211, 255, 0.35), transparent 60%),
-    radial-gradient(800px circle at 85% 18%, rgba(155, 92, 255, 0.28), transparent 62%),
-    radial-gradient(700px circle at 55% 88%, rgba(46, 242, 210, 0.22), transparent 60%),
-    linear-gradient(180deg, var(--cq-ice), var(--cq-mint) 55%, var(--cq-lav));
-  background-attachment: fixed;
-}
-
 .dashboard-page::before,
 .dashboard-container::before {
   content: "";
@@ -46,15 +36,6 @@
     overflow-y: auto;
   }
   
-  /* Header */
-  .dashboard-header {
-    text-align: center;
-    padding: 1rem;
-    border-radius: 12px;
-    box-shadow: 0 6px 18px rgba(0,0,0,.08);
-    background-color: #fffae3;
-    position: relative;
-  }
   
   .logout-button {
     border-radius: 999px;
@@ -574,15 +555,6 @@
     gap: 0.6rem;
   }
   
-  .ghost-button {
-    border-radius: 999px;
-    border: 1px solid #fff;
-    padding: 0.35rem 0.9rem;
-    background: transparent;
-    color: #1c1b1b;
-    font-size: 0.85rem;
-    cursor: pointer;
-  }
   
   .header-left {
     display: flex;
@@ -905,4 +877,56 @@
     color: #64748b;
   }
   
+  .dashboard-container{
+    width: 100vw;
+    min-height: 100vh;
+    padding: 2rem;
+    box-sizing: border-box;
+    overflow-y: auto;
   
+    /* CyberQuest theme background */
+    background:
+      radial-gradient(1200px 700px at 18% 22%, rgba(81,215,234,0.30), transparent 60%),
+      radial-gradient(900px 600px at 82% 18%, rgba(121,115,221,0.25), transparent 58%),
+      radial-gradient(900px 600px at 60% 90%, rgba(81,168,212,0.18), transparent 62%),
+      linear-gradient(135deg, #eafcff, #eef6ff 35%, #f4f1ff 80%, #ffffff);
+  }
+  
+  /* Header “hero bar” aligned with logo */
+  .dashboard-header{
+    background:
+      linear-gradient(90deg, rgba(81,215,234,0.55), rgba(121,115,221,0.45));
+    border-radius: 18px;
+    box-shadow: var(--cq-shadow);
+    padding: 1rem;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.75);
+  }
+  
+  /* Buttons: match theme */
+  .logout-button,
+  .ghost-button{
+    border-radius: 999px;
+    border: none;
+    padding: 0.55rem 1rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  
+  .logout-button{
+    background: linear-gradient(135deg, var(--cq-sky), var(--cq-purple));
+    color: #06101f;
+    box-shadow: 0 12px 28px rgba(121,115,221,0.22);
+  }
+  .ghost-button{
+    background: rgba(255,255,255,0.65);
+    border: 1px solid rgba(15,23,42,0.10);
+    color: rgba(15,23,42,0.85);
+  }
+  
+  .hero-logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 18px;
+    box-shadow: 0 12px 35px rgba(15, 23, 42, 0.55);
+  }
