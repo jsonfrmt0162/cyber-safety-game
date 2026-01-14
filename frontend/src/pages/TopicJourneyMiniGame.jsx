@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import useImage from "../hooks/useImage";
+import player  from "../assets/player.png";
 import { api } from "../services/api";
+import useSprite from "../hooks/useSprite";
 
 /**
  * Topic 1: Digital Footprint Trail Run (side runner + "THINK" slow mode + footprints meter)
@@ -18,6 +21,8 @@ import { api } from "../services/api";
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rand = (a, b) => a + Math.random() * (b - a);
 const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+const heroImg = new Image();
+heroImg.src = player;
 
 function useCanvasSize(containerRef, targetAspect = 16 / 9) {
   const [size, setSize] = useState({ w: 1200, h: 675 });
@@ -220,6 +225,8 @@ function MissionFrame({
 // reach finish line. Footprint meter punishes mistakes.
 // ============================================================
 export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = false }) {
+  
+  
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const keys = useRef({ left: false, right: false, up: false, down: false, action: false, think: false });
@@ -243,6 +250,20 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
   });
 
   const theme = "ocean";
+
+    // ✅ HERO IMAGE (loads once and works in Vite/React)
+    const heroRef = useRef(null);
+    const [heroReady, setHeroReady] = useState(false);
+  
+    useEffect(() => {
+      const img = new Image();
+      img.src = player;
+      img.onload = () => {
+        heroRef.current = img;
+        setHeroReady(true);
+      };
+    }, []);
+  
 
   // keyboard listeners
   useEffect(() => {
@@ -367,7 +388,7 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
         if (item.hit) continue;
         const ix = item.x;
         const iy = groundY - 25;
-        if (dist(px, py, ix, iy) < 46) {
+        if (dist(px, py - 40, ix, iy) < 60) {
           item.hit = true;
           if (item.type === "good") {
             setScore((s) => s + 80);
@@ -461,29 +482,53 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
       }
 
       // player
-      const rx = px - camX;
-      ctx.save();
-      ctx.translate(rx, py);
-      // body
-      ctx.fillStyle = "#60a5fa";
-      ctx.beginPath();
-      ctx.roundRect(-22, -34, 44, 48, 14);
-      ctx.fill();
-      // face
-      ctx.fillStyle = "#0b1020";
-      ctx.beginPath();
-      ctx.arc(-8, -12, 4, 0, Math.PI * 2);
-      ctx.arc(8, -12, 4, 0, Math.PI * 2);
-      ctx.fill();
-      // cape
-      ctx.fillStyle = "rgba(34,197,94,0.65)";
-      ctx.beginPath();
-      ctx.moveTo(-22, -30);
-      ctx.lineTo(-56, -18);
-      ctx.lineTo(-22, 10);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
+    //   const rx = px - camX;
+    //   ctx.save();
+    //   ctx.translate(rx, py);
+    //   // body
+    //   ctx.fillStyle = "#60a5fa";
+    //   ctx.beginPath();
+    //   ctx.roundRect(-22, -34, 44, 48, 14);
+    //   ctx.fill();
+    //   // face
+    //   ctx.fillStyle = "#0b1020";
+    //   ctx.beginPath();
+    //   ctx.arc(-8, -12, 4, 0, Math.PI * 2);
+    //   ctx.arc(8, -12, 4, 0, Math.PI * 2);
+    //   ctx.fill();
+    //   // cape
+    //   ctx.fillStyle = "rgba(34,197,94,0.65)";
+    //   ctx.beginPath();
+    //   ctx.moveTo(-22, -30);
+    //   ctx.lineTo(-56, -18);
+    //   ctx.lineTo(-22, 10);
+    //   ctx.closePath();
+    //   ctx.fill();
+    //   ctx.restore();
+
+        // ✅ PLAYER (hero sprite)
+        const rx = px - camX;
+
+        const HERO_W = 120; // bigger for kids
+        const HERO_H = 140;
+  
+        if (heroReady && heroRef.current) {
+          ctx.drawImage(
+            heroRef.current,
+            rx - HERO_W / 2,
+            py - HERO_H,
+            HERO_W,
+            HERO_H
+          );
+        } else {
+          // fallback while loading
+          ctx.fillStyle = "#60a5fa";
+          ctx.beginPath();
+          ctx.roundRect(rx - 24, py - 70, 48, 70, 14);
+          ctx.fill();
+        }
+  
+
 
       // HUD overlay
       ctx.fillStyle = "rgba(2,6,23,0.5)";
@@ -604,6 +649,20 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
     shield: { active: false, t: 0 },
     camX: 0,
   });
+
+  
+    // ✅ HERO IMAGE (loads once and works in Vite/React)
+    const heroRef = useRef(null);
+    const [heroReady, setHeroReady] = useState(false);
+  
+    useEffect(() => {
+      const img = new Image();
+      img.src = player;
+      img.onload = () => {
+        heroRef.current = img;
+        setHeroReady(true);
+      };
+    }, []);
 
   useEffect(() => {
     const down = (e) => {
@@ -843,15 +902,29 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
       ctx.textAlign = "center";
       ctx.fillText("💎", tx, st.treasure.y + 6);
 
-      // player
+
+      // player (PLAYER ICON)
       const px = st.player.x - camX;
-      ctx.fillStyle = "#60a5fa";
-      ctx.beginPath();
-      ctx.roundRect(px - 18, st.player.y - 22, 36, 44, 12);
-      ctx.fill();
-      ctx.fillStyle = "#0b1020";
-      ctx.font = `900 ${Math.round(w * 0.016)}px system-ui`;
-      ctx.fillText("🛡️", px, st.player.y + 6);
+
+      const HERO_W = 90;
+      const HERO_H = 110;
+
+      if (heroReady && heroRef.current) {
+        ctx.drawImage(
+          heroRef.current,
+          px - HERO_W / 2,
+          st.player.y - HERO_H / 2,
+          HERO_W,
+          HERO_H
+        );
+      } else {
+        // fallback while loading
+        ctx.fillStyle = "#60a5fa";
+        ctx.beginPath();
+        ctx.roundRect(px - 18, st.player.y - 22, 36, 44, 12);
+        ctx.fill();
+      }
+
 
       // shield ring
       if (st.shield.active) {
@@ -967,6 +1040,20 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
     gateX: 3600,
   });
 
+  
+    // ✅ HERO IMAGE (loads once and works in Vite/React)
+    const heroRef = useRef(null);
+    const [heroReady, setHeroReady] = useState(false);
+  
+    useEffect(() => {
+      const img = new Image();
+      img.src = player;
+      img.onload = () => {
+        heroRef.current = img;
+        setHeroReady(true);
+      };
+    }, []);
+
   useEffect(() => {
     const down = (e) => {
       if (e.key === "ArrowLeft" || e.key === "a") keys.current.left = true;
@@ -1067,7 +1154,7 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
       st.x += 6.0 * dt;
 
       // collision check at player position
-      const playerX = st.x + 140;
+      const playerX = st.x;
       const laneY = (lane) => h * (0.34 + lane * 0.18);
 
       for (const it of st.items) {
@@ -1149,16 +1236,30 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
       ctx.textAlign = "left";
       ctx.fillText(allComplete ? "OPEN!" : "LOCKED", gateX + 30, h * 0.18);
 
-      // player
+       // player (PLAYER ICON)
       const py = laneY(st.lane);
-      ctx.fillStyle = "#60a5fa";
-      ctx.beginPath();
-      ctx.roundRect(120, py - 26, 64, 52, 16);
-      ctx.fill();
-      ctx.fillStyle = "#0b1020";
-      ctx.font = `900 ${Math.round(w * 0.018)}px system-ui`;
-      ctx.textAlign = "center";
-      ctx.fillText("🔐", 152, py + 10);
+
+      const HERO_W = 90;
+      const HERO_H = 110;
+
+      // player is fixed near left side (same as before)
+      const drawX = 140;
+
+      if (heroReady && heroRef.current) {
+        ctx.drawImage(
+          heroRef.current,
+          drawX - HERO_W / 2,
+          py - HERO_H / 2,
+          HERO_W,
+          HERO_H
+        );
+      } else {
+        ctx.fillStyle = "#60a5fa";
+        ctx.beginPath();
+        ctx.roundRect(drawX - 32, py - 26, 64, 52, 16);
+        ctx.fill();
+      }
+
 
       // HUD
       ctx.fillStyle = "rgba(2,6,23,0.60)";
@@ -1296,6 +1397,20 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
     })),
     camX: 0,
   });
+
+  
+    // ✅ HERO IMAGE (loads once and works in Vite/React)
+    const heroRef = useRef(null);
+    const [heroReady, setHeroReady] = useState(false);
+  
+    useEffect(() => {
+      const img = new Image();
+      img.src = player;
+      img.onload = () => {
+        heroRef.current = img;
+        setHeroReady(true);
+      };
+    }, []);
 
   useEffect(() => {
     const down = (e) => {
@@ -1523,16 +1638,26 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
       ctx.font = `900 ${Math.round(w * 0.018)}px system-ui`;
       ctx.fillText("🏁", ex, st.exit.y + 8);
 
-      // player
       const px = st.player.x - cam;
-      ctx.fillStyle = "#60a5fa";
-      ctx.beginPath();
-      ctx.roundRect(px - 18, st.player.y - 22, 36, 44, 12);
-      ctx.fill();
-      ctx.fillStyle = "#0b1020";
-      ctx.font = `900 ${Math.round(w * 0.016)}px system-ui`;
-      ctx.textAlign = "center";
-      ctx.fillText("📱", px, st.player.y + 6);
+
+      const HERO_W = 90;
+      const HERO_H = 110;
+
+      if (heroReady && heroRef.current) {
+        ctx.drawImage(
+          heroRef.current,
+          px - HERO_W / 2,
+          st.player.y - HERO_H / 2,
+          HERO_W,
+          HERO_H
+        );
+      } else {
+        ctx.fillStyle = "#60a5fa";
+        ctx.beginPath();
+        ctx.roundRect(px - 18, st.player.y - 22, 36, 44, 12);
+        ctx.fill();
+      }
+
 
       // privacy badge above player
       ctx.fillStyle = privacy === "private" ? "rgba(34,197,94,0.9)" : "rgba(245,158,11,0.9)";
