@@ -216,6 +216,80 @@ function MissionFrame({
       </div>
     );
   }
+
+  // --- Canvas helpers: roundRect polyfill + floating POP text ---
+function ensureRoundRect(ctx) {
+  if (!ctx.roundRect) {
+    ctx.roundRect = function (x, y, w, h, r) {
+      const rr = typeof r === "number" ? { tl: r, tr: r, br: r, bl: r } : r;
+      this.beginPath();
+      this.moveTo(x + rr.tl, y);
+      this.lineTo(x + w - rr.tr, y);
+      this.quadraticCurveTo(x + w, y, x + w, y + rr.tr);
+      this.lineTo(x + w, y + h - rr.br);
+      this.quadraticCurveTo(x + w, y + h, x + w - rr.br, y + h);
+      this.lineTo(x + rr.bl, y + h);
+      this.quadraticCurveTo(x, y + h, x, y + h - rr.bl);
+      this.lineTo(x, y + rr.tl);
+      this.quadraticCurveTo(x, y, x + rr.tl, y);
+      this.closePath();
+      return this;
+    };
+  }
+}
+
+function spawnPop(popList, {
+  x,
+  y,
+  text = "+80",
+  good = true,
+  emoji = good ? "✨" : "💥",
+}) {
+  popList.push({
+    id: Math.random().toString(36).slice(2),
+    x, y,
+    vx: rand(-0.6, 0.6),
+    vy: rand(-2.2, -1.4),
+    life: 42,
+    max: 42,
+    text,
+    emoji,
+    good,
+  });
+}
+
+function drawPops(ctx, pops, w) {
+  if (!Array.isArray(pops)) return; 
+
+  for (const p of pops) {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.03;
+    p.life -= 1;
+
+    const a = clamp(p.life / p.max, 0, 1);
+
+    ctx.save();
+    ctx.globalAlpha = a;
+
+    ctx.shadowColor = p.good ? "rgba(34,197,94,0.7)" : "rgba(239,68,68,0.7)";
+    ctx.shadowBlur = 18;
+
+    const fontSize = Math.round(w * 0.02);
+    ctx.font = `900 ${fontSize}px system-ui`;
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#e2e8f0";
+
+    ctx.fillText(`${p.emoji} ${p.text}`, p.x, p.y);
+    ctx.restore();
+  }
+
+  for (let i = pops.length - 1; i >= 0; i--) {
+    if (pops[i].life <= 0) pops.splice(i, 1);
+  }
+}
+
+
   
 
 // ============================================================
@@ -247,6 +321,7 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
     items: [],
     clouds: [],
     finishX: 5200,
+    pops: [],
   });
 
   const theme = "ocean";
@@ -302,6 +377,7 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
         s: rand(0.3, 0.7),
       })),
       finishX: 5200,
+      pops: [],
     };
     setScore(0);
     setFootprints(0);
@@ -380,9 +456,12 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
 
       // progress
       setDistanceRun(Math.floor((st.player.x / st.finishX) * 100));
+  // camera follow
+  
 
       // collisions
       const px = st.player.x;
+      const camX = clamp(px - w * 0.35, 0, st.finishX - w * 0.2);
       const py = groundY - 55 - st.player.y; // y above ground
       for (const item of st.items) {
         if (item.hit) continue;
@@ -390,11 +469,17 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
         const iy = groundY - 25;
         if (dist(px, py - 40, ix, iy) < 60) {
           item.hit = true;
+        
+          const popX = ix - camX;
+          const popY = iy - 30;
+        
           if (item.type === "good") {
             setScore((s) => s + 80);
+            spawnPop(st.pops, { x: popX, y: popY, text: "+80", good: true, emoji: "✅" });
           } else {
             setFootprints((f) => f + 1);
             setScore((s) => Math.max(0, s - 30));
+            spawnPop(st.pops, { x: popX, y: popY, text: "-30", good: false, emoji: "⚠️" });
           }
         }
       }
@@ -423,9 +508,7 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
         ctx.fill();
       }
 
-      // camera follow
-      const camX = clamp(px - w * 0.35, 0, st.finishX - w * 0.2);
-
+    
       // road
       ctx.fillStyle = "#0f172a";
       ctx.fillRect(0, groundY, w, h - groundY);
@@ -456,10 +539,35 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
         ctx.textAlign = "center";
         ctx.fillText(item.type === "good" ? "✅" : "⚠️", x, groundY - 20);
 
-        // label
-        ctx.font = `600 ${Math.round(w * 0.014)}px system-ui`;
-        ctx.fillStyle = "rgba(226,232,240,0.95)";
-        ctx.fillText(item.text, x, groundY - 55);
+               // ✅ label (big pill)
+        const label = item.text;        
+
+        ctx.save();
+        ctx.font = `900 ${Math.round(w * 0.018)}px system-ui`;
+        const tw = ctx.measureText(label).width;
+        const padX = 16;
+        const pillW = tw + padX * 2;
+        const pillH = 34;
+        const pillX = x - pillW / 2;
+        const pillY = groundY - 92;       
+
+        ctx.shadowColor = "rgba(0,0,0,0.35)";
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = "rgba(2,6,23,0.85)";
+        ctx.beginPath();
+        ctx.roundRect(pillX, pillY, pillW, pillH, 16);
+        ctx.fill();       
+
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = item.type === "good" ? "rgba(34,197,94,0.55)" : "rgba(239,68,68,0.55)";
+        ctx.lineWidth = 2;
+        ctx.stroke();       
+
+        ctx.fillStyle = "#e2e8f0";
+        ctx.textAlign = "center";
+        ctx.fillText(label, x, pillY + 24);
+        ctx.restore();
+
       }
 
       // finish flag
@@ -528,7 +636,7 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
           ctx.fill();
         }
   
-
+      drawPops(ctx, st.pops, w);
 
       // HUD overlay
       ctx.fillStyle = "rgba(2,6,23,0.5)";
@@ -648,6 +756,7 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
     goodies: [],
     shield: { active: false, t: 0 },
     camX: 0,
+    pops: [],
   });
 
   
@@ -713,6 +822,7 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
       })),
       shield: { active: false, t: 0 },
       camX: 0,
+      pops: [],
     };
     setScore(0);
     setHp(3);
@@ -771,7 +881,7 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
         st.shield.t -= 1;
         if (st.shield.t <= 0) st.shield.active = false;
       }
-
+      const camX = st.camX;
       // camera follow (wide journey)
       st.camX = clamp(st.player.x - w * 0.35, 0, st.exit.x - w * 0.3);
 
@@ -798,10 +908,26 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
         if (st.shield.active && dist(st.player.x, st.player.y, p.x, p.y) < 70) {
           p.hit = true;
           setScore((s) => s + 120);
+
+          spawnPop(st.pops, {
+            x: (p.x - camX),
+            y: p.y - 30,
+            text: "+120 NO!",
+            good: true,
+            emoji: "🛡️",
+          })
         } else if (dist(st.player.x, st.player.y, p.x, p.y) < st.player.r + p.r + 6) {
           // pirate hits you => lose HP
           p.hit = true;
           setHp((hpNow) => Math.max(0, hpNow - 1));
+
+          spawnPop(st.pops, {
+            x: (p.x - camX),
+            y: p.y - 30,
+            text: "-1 LIFE",
+            good: false,
+            emoji: "💥",
+          });
         }
       }
 
@@ -821,7 +947,7 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
 
       // draw
       ctx.clearRect(0, 0, w, h);
-
+     
       // background (ocean map)
       const g = ctx.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, "#081b2a");
@@ -842,7 +968,7 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
         ctx.fill();
       }
 
-      const camX = st.camX;
+     // const camX = st.camX;
 
       // exit gate
       const ex = st.exit.x - camX;
@@ -938,7 +1064,7 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
         ctx.font = `900 ${Math.round(w * 0.02)}px system-ui`;
         ctx.fillText("NO!", px, st.player.y - 60);
       }
-
+      drawPops(ctx, st.pops, w);
       // HUD
       ctx.fillStyle = "rgba(2,6,23,0.55)";
       ctx.fillRect(18, 18, w - 36, 62);
@@ -1032,12 +1158,22 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
   const [strikes, setStrikes] = useState(0);
   const [saving, setSaving] = useState(false);
 
+  const scoreRef = useRef(0);
+  const strikesRef = useRef(0);
+  const partsRef = useRef({ length: false, symbol: false, number: false, unique: false });
+
+  const setScoreInstant = (v) => { scoreRef.current = v; setScore(v); };
+  const setStrikesInstant = (v) => { strikesRef.current = v; setStrikes(v); };
+  const setPartsInstant = (v) => { partsRef.current = v; setParts(v); };
+
+
   const stRef = useRef({
     t: 0,
     lane: 1, // 0,1,2
     x: 0,
     items: [],
     gateX: 3600,
+    pops: [],
   });
 
   
@@ -1088,6 +1224,17 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
       items: [],
     };
 
+    stRef.current.pops = [];
+
+    scoreRef.current = 0;
+    strikesRef.current = 0;
+    partsRef.current = { length: false, symbol: false, number: false, unique: false };
+
+    setScore(0);
+    setStrikes(0);
+    setParts({ length: false, symbol: false, number: false, unique: false });
+
+
     // spawn items along journey
     const types = [
       { k: "length", label: "LONG", emoji: "📏", good: true },
@@ -1122,7 +1269,11 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
     setRunning(true);
   };
 
-  const allComplete = parts.length && parts.symbol && parts.number && parts.unique;
+  const allCompleteNow = () => {
+  const p = partsRef.current;
+  return p.length && p.symbol && p.number && p.unique;
+};
+
 
   const finish = async () => {
     setRunning(false);
@@ -1143,7 +1294,7 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
       const st = stRef.current;
       st.t++;
 
-      const slow = keys.current.think ? 0.55 : 1;
+      const slow = keys.current.think ? 0.20 : 0.75;
       const dt = 1 * slow;
 
       // lane change
@@ -1156,25 +1307,41 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
       // collision check at player position
       const playerX = st.x;
       const laneY = (lane) => h * (0.34 + lane * 0.18);
-
+      const cam = st.x;
       for (const it of st.items) {
         if (it.taken) continue;
         const dx = Math.abs((it.x) - playerX);
         const dy = Math.abs(laneY(it.lane) - laneY(st.lane));
         if (dx < 34 && dy < 18) {
           it.taken = true;
+         // camera
+          
+          const popX = (it.x - cam + 140);
+          const popY = laneY(it.lane) - 40;
+        
           if (it.good) {
-            setParts((p) => ({ ...p, [it.type]: true }));
-            setScore((s) => s + 120);
+            const nextParts = { ...partsRef.current, [it.type]: true };
+            setPartsInstant(nextParts);
+        
+            const nextScore = scoreRef.current + 120;
+            setScoreInstant(nextScore);
+        
+            spawnPop(st.pops, { x: popX, y: popY, text: "+120", good: true, emoji: "✨" });
           } else {
-            setStrikes((k) => k + 1);
-            setScore((s) => Math.max(0, s - 80));
+            const nextStrikes = strikesRef.current + 1;
+            setStrikesInstant(nextStrikes);
+        
+            const nextScore = Math.max(0, scoreRef.current - 80);
+            setScoreInstant(nextScore);
+        
+            spawnPop(st.pops, { x: popX, y: popY, text: "-80", good: false, emoji: "👾" });
           }
         }
+        
       }
 
       // win: pass gate AND all parts collected
-      if (st.x >= st.gateX && allComplete) {
+      if (st.x >= st.gateX && allCompleteNow()) {
         setScore((s) => s + 250);
         finish();
         return;
@@ -1202,39 +1369,72 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
         ctx.stroke();
       }
 
-      // camera
-      const cam = st.x;
-
       // items
       for (const it of st.items) {
         if (it.taken) continue;
         const x = it.x - cam + 140;
-        if (x < -80 || x > w + 80) continue;
-
+        if (x < -120 || x > w + 120) continue;
+      
         const y = laneY(it.lane);
+      
+        // block
+        ctx.save();
+        ctx.shadowColor = it.good ? "rgba(34,197,94,0.55)" : "rgba(239,68,68,0.55)";
+        ctx.shadowBlur = 18;
+      
         ctx.fillStyle = it.good ? "#22c55e" : "#ef4444";
         ctx.beginPath();
-        ctx.roundRect(x - 28, y - 22, 56, 44, 12);
+        ctx.roundRect(x - 34, y - 26, 68, 52, 14);
         ctx.fill();
-
+        ctx.restore();
+      
+        // emoji inside block (bigger)
         ctx.fillStyle = "#0b1020";
-        ctx.font = `900 ${Math.round(w * 0.018)}px system-ui`;
+        ctx.font = `900 ${Math.round(w * 0.022)}px system-ui`;
         ctx.textAlign = "center";
-        ctx.fillText(it.emoji, x, y + 8);
-
-        ctx.fillStyle = "rgba(226,232,240,0.95)";
-        ctx.font = `800 ${Math.round(w * 0.013)}px system-ui`;
-        ctx.fillText(it.label, x, y - 30);
+        ctx.fillText(it.emoji, x, y + 10);
+      
+        // ✅ SUPER VISIBLE message pill
+        const label = it.label; // e.g. "UNIQUE", "REUSE!"
+        ctx.save();
+        ctx.font = `900 ${Math.round(w * 0.016)}px system-ui`;
+        const tw = ctx.measureText(label).width;
+        const padX = 14;
+        const pillW = tw + padX * 2;
+        const pillH = 30;
+        const pillX = x - pillW / 2;
+        const pillY = y - 64;
+      
+        // pill bg + outline
+        ctx.shadowColor = "rgba(0,0,0,0.35)";
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = "rgba(2,6,23,0.85)";
+        ctx.beginPath();
+        ctx.roundRect(pillX, pillY, pillW, pillH, 14);
+        ctx.fill();
+      
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = it.good ? "rgba(34,197,94,0.55)" : "rgba(239,68,68,0.55)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      
+        // label text
+        ctx.fillStyle = "#e2e8f0";
+        ctx.textAlign = "center";
+        ctx.fillText(label, x, pillY + 21);
+        ctx.restore();
       }
 
+
       // gate
+      const openGate = allCompleteNow();
       const gateX = st.gateX - cam + 140;
-      ctx.fillStyle = allComplete ? "#22c55e" : "#f59e0b";
+      ctx.fillStyle = openGate ? "#22c55e" : "#f59e0b";
       ctx.fillRect(gateX - 18, h * 0.24, 36, h * 0.56);
       ctx.fillStyle = "#e2e8f0";
       ctx.font = `900 ${Math.round(w * 0.02)}px system-ui`;
       ctx.textAlign = "left";
-      ctx.fillText(allComplete ? "OPEN!" : "LOCKED", gateX + 30, h * 0.18);
+      ctx.fillText(openGate ? "OPEN!" : "LOCKED", gateX + 30, h * 0.18);
 
        // player (PLAYER ICON)
       const py = laneY(st.lane);
@@ -1260,7 +1460,7 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
         ctx.fill();
       }
 
-
+      drawPops(ctx, st.pops, w);
       // HUD
       ctx.fillStyle = "rgba(2,6,23,0.60)";
       ctx.fillRect(18, 18, w - 36, 92);
@@ -1287,17 +1487,19 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
         ctx.fillText(label, x + 70, 90);
       };
 
-      partChip(parts.length, "📏 LENGTH", 32);
-      partChip(parts.symbol, "✨ SYMBOL", 184);
-      partChip(parts.number, "🔢 NUMBER", 336);
-      partChip(parts.unique, "🧬 UNIQUE", 488);
+      const pr = partsRef.current;
+      partChip(pr.length, "📏 LENGTH", 32);
+      partChip(pr.symbol, "✨ SYMBOL", 184);
+      partChip(pr.number, "🔢 NUMBER", 336);
+      partChip(pr.unique, "🧬 UNIQUE", 488);
+
 
       raf = requestAnimationFrame(loop);
     };
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [running, w, h, score, parts, strikes, allComplete]);
+  }, [running, w, h, score, parts, strikes, allCompleteNow()]);
 
   const instructions = (
     <>
