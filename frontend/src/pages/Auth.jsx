@@ -69,6 +69,7 @@ export default function Auth() {
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("user_id", data.user_id);
         localStorage.setItem("username", data.username);
+        localStorage.setItem("is_admin", data.is_admin ? "1" : "0");
         showToast("success", `Welcome back, ${data.username || "player"}!`);
         navigate("/dashboard");
       } else {

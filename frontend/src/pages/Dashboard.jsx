@@ -263,6 +263,13 @@ const quizProgress = useMemo(() => {
 
       
         <div className="header-buttons">
+
+        {localStorage.getItem("is_admin") === "1" && (
+          <button className="dash-admin-btn" onClick={() => navigate("/admin")}>
+            🛠 Admin Panel
+          </button>
+        )}
+        
         <button
            className="ghost-button"
            type="button"

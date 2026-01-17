@@ -21,7 +21,7 @@ def register(user: schemas.UserRegister, db: Session = Depends(database.get_db))
     new_user = models.User(
         username=user.username,
         email=user.email,
-        password=hash_password(user.password),  # ✅ hashed now
+        password=user.password, 
         birthday=user.birthday,
         age=user.age
     )
