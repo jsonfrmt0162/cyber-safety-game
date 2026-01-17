@@ -1551,7 +1551,7 @@ const finishLocked = () => {
       ctx.textAlign = "left";
       ctx.font = `900 ${Math.round(w * 0.016)}px system-ui`;
       ctx.fillStyle = paused ? "#fbbf24" : "rgba(226,232,240,0.85)";
-      ctx.fillText(paused ? "⏸ PAUSED (Press ACTION)" : "⭐ ACTION = Pause", 32, 92);
+      // ctx.fillText(paused ? "⏸ PAUSED (Press ACTION)" : "⭐ ACTION = Pause", 32, 92);
 
 
       // parts bar
