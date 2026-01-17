@@ -386,7 +386,7 @@ const LESSON_INTRO = {
     title: "My Digital Footprint",
     text: [
       "Everything you do online leaves tiny footprints behind—just like walking on the beach! These footprints show where you’ve been, what you’ve liked, and what you’ve shared.",
-      "Every photo you post on Instagram, comment you make on TikTok, or message you send in a game chat becomes part of your online record.",
+      "Every photo you post on Instagram, comment you make on TikTok, or message you send in a game chat becomes part of your online record. Even if you delete something, it might still be saved, shared, or screenshotted by others.",
       "Whether you’re sharing a meme, posting a selfie, or chatting with friends in a game, remember: your online footprints can travel far and last a long time. So make sure they lead to something positive, kind, and something you’ll be proud of!",
     ],
     quickTip: "Think before posting online and ask a guardian if you’re unsure.",
@@ -419,6 +419,311 @@ const LESSON_INTRO = {
     quickTip: "Check your privacy settings with a guardian and only connect with people you know.",
   },
 };
+
+const STORY_LESSON = {
+  1: {
+
+    intro: [
+      "Everything you do online leaves tiny footprints behind.",
+      "Posts, likes, searches, and messages all become part of your online record.",
+      "Your digital footprint can last a long time — even forever."
+    ],
+
+    objectives: [
+      "Define what a digital footprint is",
+      "Differentiate between active and passive digital footprints",
+      "Identify cybersecurity risks related to digital footprints",
+      "Apply best practices to protect your digital presence"
+    ],
+
+    concepts: [
+      {
+        title: "What Is a Digital Footprint?",
+        points: [
+          "Social media posts and comments",
+          "Online searches",
+          "App usage",
+          "Photos, videos, and likes",
+          "Location data",
+          "Website cookies and trackers"
+        ],
+        note: "Even deleted content may still exist in screenshots or backups."
+      },
+      {
+        title: "Types of Digital Footprints",
+        points: [
+          "🟢 Active: posts, comments, messages, accounts",
+          "🔵 Passive: browsing history, cookies, IP address, location"
+        ]
+      },
+      {
+        title: "Why Digital Footprints Matter",
+        points: [
+          "Identity theft",
+          "Account takeovers",
+          "Phishing attacks",
+          "Reputation damage",
+          "Targeted scams"
+        ]
+      }
+    ],
+
+    example: {
+      title: "Real-Life Example (OSINT)",
+      text:
+        "A cybercriminal finds your birthday and school online and uses this information to guess passwords or create phishing emails."
+    },
+
+    bestPractices: [
+      "Think before you post",
+      "Use strong, unique passwords",
+      "Enable multi-factor authentication (MFA)",
+      "Review privacy settings regularly",
+      "Limit location sharing",
+      "Avoid oversharing personal details",
+      "Be cautious with quizzes and fun apps"
+    ],
+
+    takeaways: [
+      "Your digital footprint is permanent and powerful",
+      "Cybersecurity starts with personal responsibility",
+      "Small actions online can have big consequences",
+      "You control your footprint if you’re aware of it"
+    ]
+  },
+  2: {
+    title: "Personal Info & Privacy",
+
+    intro: [
+      "Your personal information is like the treasure inside your own chest — special and valuable!",
+      "Things like your name, birthday, address, school, and passwords are pieces of that treasure.",
+      "You are the guardian of your treasure, and sneaky pirates (strangers online) might try to steal it.",
+      "Never share your treasure with someone you don’t know, and only show it to people you trust, like a parent, guardian, or teacher."
+    ],
+
+    objectives: [
+      "Define personal information and why it is valuable",
+      "Identify different types of personal information",
+      "Recognize how attackers exploit personal information",
+      "Apply best practices to protect personal data online"
+    ],
+
+    concepts: [
+      {
+        title: "What Is Personal Information?",
+        points: [
+          "Steal identities",
+          "Access accounts",
+          "Create convincing scams",
+          "Track or impersonate individuals"
+        ],
+        note: "Sensitive information should NEVER be shared publicly."
+      },
+      {
+        title: "Types of Personal Information",
+        points: [
+          "🟢 Basic Personal Information: Full name, Date of birth, Email address, Phone number, Home address, School or workplace",
+          "🔵 Sensitive Personal Information: Passwords, Social Insurance / Social Security numbers, Government ID numbers, Medical information"
+        ]
+      },
+      {
+        title: "Why Personal Information Is Valuable to Cybercriminals",
+        points: [
+          "Phishing and social engineering",
+          "Identity theft",
+          "Account takeover",
+          "Fraud and scams",
+          "Password guessing"
+        ]
+      }
+    ],
+
+    example: {
+      title: "Real-World Scenario",
+      text:
+        "A scammer: Learns your name and school from social media, Sends a fake “school account” email, Asks you to reset your password"
+    },
+
+    bestPractices: [
+      "Share the minimum information needed",
+      "Use strong, unique passwords",
+      "Enable multi-factor authentication (MFA)",
+      "Double-check links and senders",
+      "Keep accounts private when possible",
+      "Review app permissions",
+      "Never share passwords—even with friends",
+      "Ask an adult or IT support if unsure"
+    ],
+
+    takeaways: [
+      "Personal information is valuable and powerful",
+      "Once shared, control is difficult to regain",
+      "Cybersecurity starts with smart choices",
+      "When in doubt: don’t share"
+    ]
+  },
+
+  3: {
+    title: "Passwords & Passphrases",
+
+    intro: [
+      "Your personal information is like the treasure inside your own chest — special and valuable!",
+      "Things like your name, birthday, address, school, and passwords are pieces of that treasure.",
+      "You are the guardian of your treasure, and sneaky pirates (strangers online) might try to steal it.",
+      "Never share your treasure with someone you don’t know, and only show it to people you trust, like a parent, guardian, or teacher."
+    ],
+
+    objectives: [
+      "Explain what passwords and passphrases are",
+      "Identify the difference between a weak password and a strong passphrase",
+      "Understand common password-related attacks",
+      "Apply best practices for creating and protecting passwords"
+    ],
+
+    concepts: [
+      {
+        title: "What is a Password?",
+        points: [
+          "Numbers",
+          "Letters",
+          "Symbols"
+        ],
+        note: "Short or simple passwords are easy to guess or crack."
+      },
+      {
+        title: "What Is a Passphrase?",
+        points: [
+          "A passphrase is a longer password made of multiple words that is easier to remember andmuch harder to break.",
+        ]
+      },
+      {
+        title: "Common Password Attacks",
+        points: [
+          "Brute-force attacks – trying many combinations",
+          "Dictionary attacks – using common words",
+          "Phishing – tricking users into revealing passwords",
+          "Credential stuffing – using leaked passwords on other sites"
+        ]
+      },
+      {
+        title: "Why Passwords Matter in Cybersecurity",
+        points: [
+          "Protects Email accounts",
+          "Social media",
+          "Online games",
+          "School or work systems",
+          "Banking and shopping accounts"
+        ],
+      }
+    ],
+
+    example: {
+      title: "Real-World Scenario",
+      text:
+        "An attacker gets a leaked password from one website and tries it on: Email, Social Media, Gaming accounts"
+    },
+
+    bestPractices: [
+      "At least 12–16 characters",
+      "Mix of upper/lowercase letters",
+      "Numbers and symbols",
+      "No personal information",
+      "Unique for each account"
+    ],
+
+    takeaways: [
+      "Passwords are your first defense",
+      "Longer passphrases are stronger and safer",
+      "Never reuse passwords",
+      "MFA adds powerful protection"
+    ]
+  },
+
+  4: {
+    title: "Social Media and Privacy Settings",
+
+    intro: [
+      "Think of your online accounts — like your social media, games, or chat apps — as a toy box. All your pictures, messages, and game scores are your toys. You get to choose who can play.",
+      "Privacy settings are like the lid on your toy box — they keep strangers from grabbing your toys.",
+      "Only let people you trust, like family or friends, see your stuff.",
+      "And remember, even if you show one toy to a friend, sometimes others might see it too, so always be careful what you share online!"
+    ],
+
+    objectives: [
+      "Explain how social media affects cybersecurity and privacy",
+      "Identify common risks of public social media profiles",
+      "Understand what privacy settings do and why they matter",
+      "Apply best practices to secure social media accounts"
+    ],
+
+    concepts: [
+      {
+        title: "Why Social Media Matters in Cybersecurity",
+        points: [
+          "Gather personal information",
+          "Create convincing phishing scams",
+          "Guess passwords or security questions",
+          "Impersonate users",
+          "Track locations and routines"
+        ],
+        note: "What you share online can be seen by more people than you expect."
+      },
+      {
+        title: "Common Social Media Risks",
+        points: [
+          "Public profiles",
+          "Oversharing personal details",
+          "Location tagging",
+          "Accepting unknown friend/follower requests",
+          "Fake accounts and impersonation",
+          "Third-party apps connected to accounts"
+        ],
+      },
+      {
+        title: "Public vs. Private Accounts",
+        points: [
+          "🟢 Public Accounts: Anyone can see posts, Higher risk of data misuse, Content can be copied or shared",
+          "🔵 Private Accounts: You control who sees your content, Lower exposure to strangers, Better protection for personal information"
+        ]
+      },
+      {
+        title: "What Are Privacy Settings?",
+        points: [
+          "Who can see posts and stories",
+          "Who can comment or message",
+          "Who can tag or mention you",
+          "Whether your account appears in searches",
+          "What data apps can access"
+        ]
+      }
+    ],
+
+    example: {
+      title: "Real-World Scenario",
+      text:
+        "A scammer: Learns your name and school from social media, Sends a fake “school account” email, Asks you to reset your password"
+    },
+
+    bestPractices: [
+      "Set profiles to private (when possible)",
+      "Review privacy settings regularly",
+      "Limit who can message or tag you",
+      "Turn off location sharing",
+      "Remove old or unused apps",
+      "Enable multi-factor authentication (MFA)",
+      "Accept requests only from people you know"
+    ],
+
+    takeaways: [
+      "Social media is a major source of personal data",
+      "Privacy settings reduce—but don’t eliminate—risk",
+      "Public profiles increase exposure to attacks",
+      "You control what you share and who sees it"
+    ]
+  },
+};
+
+
 
 const STORYLINES = {
   1: "Help Alex clean up their digital footprints before a cyber villain uses them for a fake profile.",
@@ -2037,6 +2342,7 @@ export default function Game() {
       </div>
     );
   }
+  const storyLesson = STORY_LESSON?.[numericGameId];
   
 
   // -------------------- UI -------------------- //
@@ -2099,7 +2405,86 @@ export default function Game() {
 
           {/* LESSON MODE: gamified lesson flow */}
           {mode === "lesson" && currentLesson && (
+            //DITO 
+            
             <div className="lesson-wrapper">
+               {LESSON_INTRO[numericGameId] && (
+                <div className="lesson-box">
+                  <h2>📖 {LESSON_INTRO[numericGameId].title}</h2>
+                  <ul>
+                    {LESSON_INTRO[numericGameId].text.map((line, idx) => (
+                      <li key={idx}>{line}</li>
+                    ))}
+                  </ul>
+                  <p className="lesson-tip">
+                    {LESSON_INTRO[numericGameId].quickTip}
+                  </p>
+                </div>
+              )}
+
+              {storyLesson && (
+                <div className="story-lesson">
+                  <h2> {storyLesson.title}</h2>
+              
+                  {/* Learning Objectives */}
+                  <section>
+                    <h3>🎯 Learning Objectives</h3>
+                    <ol>
+                      {(storyLesson.objectives ?? []).map((obj, i) => (
+                        <li key={i}>{obj}</li>
+                      ))}
+                    </ol>
+                  </section>
+                      
+                  {/* Key Concepts */}
+                  <section>
+                    <h3>🧠 Key Concepts</h3>
+                    {(storyLesson.concepts ?? []).map((concept, i) => (
+                      <div key={i} className="story-card">
+                        <h4>{concept.title}</h4>
+                    
+                        <ul>
+                          {(concept.points ?? []).map((p, j) => (
+                            <li key={j}>{p}</li>
+                          ))}
+                        </ul>
+                          
+                        {concept.note && <p className="story-note">⚠️ {concept.note}</p>}
+                      </div>
+                    ))}
+                  </section>
+                          
+                  {/* Real-Life Example */}
+                  {storyLesson.example?.text && (
+                    <section className="story-example">
+                      <h3>📌 {storyLesson.example?.title ?? "Real-Life Example"}</h3>
+                      <p>{storyLesson.example.text}</p>
+                    </section>
+                  )}
+
+                  {/* Best Practices */}
+                  <section className="story-best">
+                    <h3>🔐 Best Practices</h3>
+                    <ul>
+                      {(storyLesson.bestPractices ?? []).map((bp, i) => (
+                        <li key={i}>✔ {bp}</li>
+                      ))}
+                    </ul>
+                  </section>
+                      
+                  {/* Key Takeaways */}
+                  <section className="story-takeaways">
+                    <h3>✅ Key Takeaways</h3>
+                    <ul>
+                      {(storyLesson.takeaways ?? []).map((tk, i) => (
+                        <li key={i}>{tk}</li>
+                      ))}
+                    </ul>
+                  </section>
+                </div>
+              )}
+
+
               <div className="lesson-header">
                 <span className="lesson-step">
                   Card {lessonIndex + 1} of {lessonSteps.length}
@@ -2166,19 +2551,6 @@ export default function Game() {
           {/* QUIZ MODE: game-style quiz presentation */}
           {mode === "quiz" && (
             <>
-              {LESSON_INTRO[numericGameId] && (
-                <div className="lesson-box">
-                  <h2>📖 {LESSON_INTRO[numericGameId].title}</h2>
-                  <ul>
-                    {LESSON_INTRO[numericGameId].text.map((line, idx) => (
-                      <li key={idx}>{line}</li>
-                    ))}
-                  </ul>
-                  <p className="lesson-tip">
-                    {LESSON_INTRO[numericGameId].quickTip}
-                  </p>
-                </div>
-              )}
 
               <div className="objectives-box">
                 <h2>📘 Learning Goals</h2>

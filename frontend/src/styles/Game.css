@@ -1011,3 +1011,41 @@
     color: #bbf7d0;
   }
   
+  .story-lesson-extended {
+    margin-top: 16px;
+  }
+  
+  .story-section {
+    margin-top: 16px;
+  }
+  
+  .story-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px;
+    margin-top: 10px;
+  }
+  
+  .story-card h4 {
+    margin: 0 0 6px 0;
+    font-weight: 800;
+  }
+  
+  .story-note {
+    font-size: 13px;
+    color: #b45309;
+  }
+  
+  .best-practices {
+    background: #ecfeff;
+    padding: 12px;
+    border-radius: 12px;
+  }
+  
+  .takeaways {
+    background: #eef2ff;
+    padding: 12px;
+    border-radius: 12px;
+  }
+  

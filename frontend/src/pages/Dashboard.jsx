@@ -85,7 +85,7 @@ function GameCard({ game, progress, onPlay, locked, prereqTitle }) {
         <div className="game-card-header">
           <span className="game-icon">{game.emoji}</span>
           <div className="game-header-text">
-            <h3 className="game-title">{game.title}</h3>
+            <h5 className="game-title"> Lesson {game.id} : {game.title}</h5>
             <p className="game-subtitle">Cyber Quest Quiz</p>
           </div>
           {locked ? (

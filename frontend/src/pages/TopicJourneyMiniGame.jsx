@@ -53,6 +53,61 @@ function useCanvasSize(containerRef, targetAspect = 16 / 9) {
   return size;
 }
 
+function drawParallaxBackground(ctx, w, h, t, variant = "ocean") {
+  // sky gradient
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  if (variant === "ocean") {
+    g.addColorStop(0, "#061a2b");
+    g.addColorStop(1, "#030712");
+  } else if (variant === "forge") {
+    g.addColorStop(0, "#120a24");
+    g.addColorStop(1, "#050512");
+  } else {
+    // city
+    g.addColorStop(0, "#0b1020");
+    g.addColorStop(1, "#020617");
+  }
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+
+  // stars
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  for (let i = 0; i < 80; i++) {
+    ctx.beginPath();
+    ctx.arc((i * 97) % w, (i * 61 + t * 0.3) % (h * 0.65), 1.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // far hills / waves
+  ctx.fillStyle =
+    variant === "ocean" ? "rgba(34,197,94,0.10)" :
+    variant === "forge" ? "rgba(168,85,247,0.10)" :
+    "rgba(99,102,241,0.10)";
+
+  for (let i = 0; i < 7; i++) {
+    const x = ((i * 260 + t * 0.8) % (w + 400)) - 200;
+    const y = h * (0.62 + (i % 2) * 0.05);
+    ctx.beginPath();
+    ctx.ellipse(x, y, 180, 60, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // foreground blobs
+  ctx.fillStyle =
+    variant === "ocean" ? "rgba(14,165,233,0.10)" :
+    variant === "forge" ? "rgba(251,146,60,0.10)" :
+    "rgba(34,197,94,0.08)";
+
+  for (let i = 0; i < 6; i++) {
+    const x = ((i * 340 - t * 1.2) % (w + 500)) - 250;
+    const y = h * (0.78 + (i % 2) * 0.04);
+    ctx.beginPath();
+    ctx.ellipse(x, y, 220, 72, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+
 function BigControls({ keysRef, disabled }) {
   // Big on-screen buttons for kids / mobile
   const setKey = (name, val) => {
@@ -494,11 +549,7 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
       ctx.clearRect(0, 0, w, h);
 
       // background
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, "#0b1020");
-      grad.addColorStop(1, "#06111a");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
+      drawParallaxBackground(ctx, w, h, st.t, "ocean");
 
       // clouds + stars
       ctx.fillStyle = "rgba(255,255,255,0.08)";
@@ -670,12 +721,14 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
 
   const instructions = (
     <>
-      <b>Goal:</b> Reach the finish line while keeping your footprint “clean”. Collect ✅ good choices, avoid ⚠️ oversharing traps.
-      <br />
-      <b>Controls:</b> Move ⬅➡ (or A/D). Jump = SPACE / ⭐ ACTION. Hold 🧠 THINK (Shift) to slow down and choose safely.
+      <b>Goal:</b> Run to the FINISH while keeping your digital footprint clean. <br />
+      <b>Collect:</b> ✅ Good choices (privacy, kindness, think before posting). <br />
+      <b>Avoid:</b> ⚠️ Oversharing traps (ID, live location, strangers). <br />
+      <b>Controls:</b> ⬅➡ move (A/D), ⭐ ACTION = jump (Space), 🧠 THINK = slow-motion (Shift). <br />
+      <b>Tip:</b> Use THINK before a risky item so you can react safely.
     </>
   );
-
+  
   const safeScore = Math.max(0, score - footprints * 10);
 
   return (
@@ -1088,12 +1141,13 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
 
   const instructions = (
     <>
-      <b>Goal:</b> Escort the 💎 treasure to the green SAFE zone. Pirates will ask for your info—block them!
-      <br />
-      <b>Controls:</b> Move ⬅⬆⬇➡. Press ⭐ ACTION to shout <b>NO!</b> shield near pirates. Hold 🧠 THINK to slow down.
+      <b>Goal:</b> Escort the 💎 treasure to the SAFE zone without giving info to pirates. <br />
+      <b>Collect:</b> 🔑 Keys for bonus points. <br />
+      <b>Danger:</b> 🏴‍☠️ Pirates ask “Name? Birthday? Address?” — don’t let them touch you. <br />
+      <b>Controls:</b> ⬅⬆⬇➡ move, ⭐ ACTION (Space) = shield “NO!” blast near pirates, 🧠 THINK (Shift) = slow mode.
     </>
   );
-
+  
   return (
     <MissionFrame
       embedded={embedded}
@@ -1161,6 +1215,8 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
   const scoreRef = useRef(0);
   const strikesRef = useRef(0);
   const partsRef = useRef({ length: false, symbol: false, number: false, unique: false });
+  const [paused, setPaused] = useState(false);
+  const [result, setResult] = useState(null);
 
   const setScoreInstant = (v) => { scoreRef.current = v; setScore(v); };
   const setStrikesInstant = (v) => { strikesRef.current = v; setStrikes(v); };
@@ -1233,7 +1289,8 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
     setScore(0);
     setStrikes(0);
     setParts({ length: false, symbol: false, number: false, unique: false });
-
+    setPaused(false);
+    setResult(null);
 
     // spawn items along journey
     const types = [
@@ -1275,13 +1332,22 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
 };
 
 
-  const finish = async () => {
-    setRunning(false);
-    setDone(true);
-    setSaving(true);
-    await saveScoreToBackend({ userId, gameId, score });
-    setSaving(false);
-  };
+const finishWin = async () => {
+  setRunning(false);
+  setDone(true);
+  setResult("win");
+  setSaving(true);
+  await saveScoreToBackend({ userId, gameId, score });
+  setSaving(false);
+};
+
+const finishLocked = () => {
+  setRunning(false);
+  setDone(true);
+  setResult("locked");
+  // no saving here (optional)
+};
+
 
   useEffect(() => {
     if (!running) return;
@@ -1300,9 +1366,12 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
       // lane change
       if (keys.current.up) { st.lane = clamp(st.lane - 1, 0, 2); keys.current.up = false; }
       if (keys.current.down) { st.lane = clamp(st.lane + 1, 0, 2); keys.current.down = false; }
-
+      if (keys.current.action) {
+        setPaused((p) => !p);
+        keys.current.action = false; // IMPORTANT: prevent rapid toggles
+      }
       // forward
-      st.x += 6.0 * dt;
+      if (!paused) st.x += 6.0 * dt;
 
       // collision check at player position
       const playerX = st.x;
@@ -1341,20 +1410,25 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
       }
 
       // win: pass gate AND all parts collected
-      if (st.x >= st.gateX && allCompleteNow()) {
-        setScore((s) => s + 250);
-        finish();
+      if (st.x >= st.gateX) {
+        if (allCompleteNow()) {
+          setScore((s) => s + 250);
+          // use a tiny timeout so score state applies before saving UI shows
+          setTimeout(() => finishWin(), 0);
+        } else {
+          finishLocked();
+        }
         return;
       }
+
+
+      
 
       // draw
       ctx.clearRect(0, 0, w, h);
 
-      const bg = ctx.createLinearGradient(0, 0, 0, h);
-      bg.addColorStop(0, "#0a1224");
-      bg.addColorStop(1, "#071024");
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, w, h);
+      drawParallaxBackground(ctx, w, h, st.t, "forge");
+
 
       // track
       ctx.fillStyle = "rgba(148,163,184,0.10)";
@@ -1474,6 +1548,11 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
       ctx.font = `800 ${Math.round(w * 0.016)}px system-ui`;
       ctx.fillText(`Score: ${score}`, w - 28, 44);
       ctx.fillText(`Strikes: ${strikes}`, w - 28, 70);
+      ctx.textAlign = "left";
+      ctx.font = `900 ${Math.round(w * 0.016)}px system-ui`;
+      ctx.fillStyle = paused ? "#fbbf24" : "rgba(226,232,240,0.85)";
+      ctx.fillText(paused ? "⏸ PAUSED (Press ACTION)" : "⭐ ACTION = Pause", 32, 92);
+
 
       // parts bar
       const partChip = (ok, label, x) => {
@@ -1503,11 +1582,14 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
 
   const instructions = (
     <>
-      <b>Goal:</b> Build a strong password by collecting 4 parts: LENGTH, SYMBOL, NUMBER, UNIQUE. Avoid 👾 REUSE traps.
-      <br />
-      <b>Controls:</b> Use ⬆⬇ to switch lanes. Hold 🧠 THINK to slow down. Reach the gate only when all parts are collected.
+      <b>Goal:</b> Build a strong password by collecting all 4 parts: <br />
+      📏 LENGTH, ✨ SYMBOL, 🔢 NUMBER, 🧬 UNIQUE. <br />
+      <b>Avoid:</b> 👾 REUSE traps (same password everywhere). <br />
+      <b>Controls:</b> ⬆⬇ switch lanes. ⭐ ACTION = Pause/Resume. 🧠 THINK = slow mode. <br />
+      <b>Finish:</b> The gate opens ONLY when all 4 parts are collected.
     </>
   );
+  
 
   return (
     <MissionFrame
@@ -1535,13 +1617,37 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
               </div>
             </div>
           )}
-
           {done && (
             <div style={ui.overlay}>
               <div style={ui.overlayCard}>
-                <div style={ui.overlayTitle}>Forge Complete! 🎉</div>
-                <div style={ui.overlayText}>Final Score: <b>{score}</b></div>
-                <div style={ui.overlaySmall}>{saving ? "Saving score..." : "Score saved ✅"}</div>
+                <div style={ui.overlayTitle}>
+                  {result === "win" ? "Forge Complete! 🎉" : "Gate Locked! 🔒"}
+                </div>
+          
+                {result === "win" ? (
+                  <div style={ui.overlayText}>
+                    You collected all 4 password parts and unlocked the gate!
+                    <br />
+                    Final Score: <b>{score}</b>
+                  </div>
+                ) : (
+                  <div style={ui.overlayText}>
+                    You reached the gate, but your password is missing parts.
+                    <br />
+                    Collect all: <b>LENGTH</b>, <b>SYMBOL</b>, <b>NUMBER</b>, <b>UNIQUE</b>
+                    <br />
+                    Then try again!
+                  </div>
+                )}
+
+                <div style={ui.overlaySmall}>
+                  {result === "win"
+                    ? saving
+                      ? "Saving score..."
+                      : "Score saved ✅"
+                    : "Score not saved (incomplete) ❗"}
+                </div>
+                
                 <button style={ui.primaryBtn} onClick={reset}>🔁 Play Again</button>
               </div>
             </div>
@@ -1570,6 +1676,7 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
   const [score, setScore] = useState(0);
   const [privacy, setPrivacy] = useState("public"); // public/private
   const [saving, setSaving] = useState(false);
+
 
   const stRef = useRef({
     t: 0,
@@ -1758,11 +1865,7 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
 
       // draw
       ctx.clearRect(0, 0, w, h);
-      const bg = ctx.createLinearGradient(0, 0, 0, h);
-      bg.addColorStop(0, "#0b1020");
-      bg.addColorStop(1, "#040b14");
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, w, h);
+      drawParallaxBackground(ctx, w, h, st.t, "city");
 
       // city blocks
       ctx.fillStyle = "rgba(99,102,241,0.08)";
@@ -1893,12 +1996,13 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
 
   const instructions = (
     <>
-      <b>Goal:</b> Reach the finish 🏁. Public mode is risky—strangers can drain your score.
-      <br />
-      <b>Controls:</b> Move with ⬅⬆⬇➡. Use ⭐ ACTION near a switch to turn <b>PRIVATE</b> and open 🔒 gates.
+      <b>Goal:</b> Reach the 🏁 exit by turning your account PRIVATE and opening locked gates. <br />
+      <b>Danger:</b> 👤 Strangers drain score when you are PUBLIC. <br />
+      <b>Controls:</b> ⬅⬆⬇➡ move, ⭐ ACTION (Space) on a switch = turn PRIVATE, 🧠 THINK (Shift) = slow mode. <br />
+      <b>Tip:</b> Go PRIVATE early to stay safe and pass 🔒 gates.
     </>
   );
-
+  
   return (
     <MissionFrame
       embedded={embedded}
