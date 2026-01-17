@@ -2,13 +2,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import schemas, models, database
+from app.auth import hash_password, verify_password, create_access_token
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.post("/register")
 def register(user: schemas.UserRegister, db: Session = Depends(database.get_db)):
-    # Age restriction (e.g. 11–17 as per module target)
     if user.age < 13 or user.age > 17:
         raise HTTPException(status_code=400, detail="Age must be between 13 and 17.")
 
@@ -21,7 +21,7 @@ def register(user: schemas.UserRegister, db: Session = Depends(database.get_db))
     new_user = models.User(
         username=user.username,
         email=user.email,
-        password=user.password,  # ⚠ plaintext for demo only
+        password=hash_password(user.password),  # ✅ hashed now
         birthday=user.birthday,
         age=user.age
     )
@@ -37,12 +37,16 @@ def register(user: schemas.UserRegister, db: Session = Depends(database.get_db))
 def login(data: schemas.UserLogin, db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == data.email).first()
 
-    if not user or user.password != data.password:
+    if not user or not verify_password(data.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # Simplified "token" for demo
+    # ✅ real JWT token
+    token = create_access_token({"sub": str(user.id)})
+
     return {
-        "access_token": "dummy-token",
+        "access_token": token,
+        "token_type": "bearer",
         "user_id": user.id,
-        "username": user.username
+        "username": user.username,
+        "is_admin": user.is_admin,
     }

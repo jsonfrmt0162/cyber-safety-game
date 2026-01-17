@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes import users, game, scores
 from app.database import engine, SessionLocal
 from app import models
+from app.routes import admin
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -53,6 +54,7 @@ def seed_games():
 app.include_router(users.router)
 app.include_router(game.router)
 app.include_router(scores.router)
+app.include_router(admin.router)
 
 
 @app.get("/")

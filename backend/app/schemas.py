@@ -23,10 +23,15 @@ class UserOut(BaseModel):
     birthday: date
     age: int
     high_score: int | None = 0
+    is_admin: bool
 
     class Config:
         orm_mode = True
 
+class AdminStatsOut(BaseModel):
+    total_users: int
+    total_scores: int
+    top_players: int
 
 class GameOut(BaseModel):
     id: int
