@@ -344,18 +344,22 @@ function drawPops(ctx, pops, w) {
   }
 }
 
+const MAX_LEVEL = 2;
+
+function levelBadge(level) {
+  return `🧭 Level: ${level}/${MAX_LEVEL}`;
+}
+
 
   
-
 // ============================================================
 // TOPIC 1 — Digital Footprint Trail Run
 // mechanic: side-runner journey, jump with ACTION, THINK slows time,
 // collect ✅ “Good Posts” to increase score, avoid ❌ “Overshare” traps,
 // reach finish line. Footprint meter punishes mistakes.
+// NOW includes: Levels + 3 lives (hearts)
 // ============================================================
 export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = false }) {
-  
-  
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const keys = useRef({ left: false, right: false, up: false, down: false, action: false, think: false });
@@ -364,12 +368,41 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
 
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
-  const [score, setScore] = useState(0);
-  const [footprints, setFootprints] = useState(0); // lower is better
-  const [distanceRun, setDistanceRun] = useState(0);
   const [saving, setSaving] = useState(false);
 
-  // world state in refs for smooth animation
+  // score/penalties
+  const [score, setScore] = useState(0);
+  const [footprints, setFootprints] = useState(0);
+
+  // lives (3 hearts)
+  const [hp, setHp] = useState(3);
+
+  // levels
+  const MAX_LEVEL = 2;
+  const [level, setLevel] = useState(1);
+
+  // between-level screen
+  const [betweenLevels, setBetweenLevels] = useState(false);
+  const [levelSummary, setLevelSummary] = useState(null); // { level, safeScore, footprints, hp }
+
+  // Refs for stable gameplay logic inside RAF loop
+  const scoreRef = useRef(0);
+  const footprintsRef = useRef(0);
+  const hpRef = useRef(3);
+  const levelRef = useRef(1);
+
+  const setScoreInstant = (v) => { scoreRef.current = v; setScore(v); };
+  const setFootprintsInstant = (v) => { footprintsRef.current = v; setFootprints(v); };
+  const setHpInstant = (v) => { hpRef.current = v; setHp(v); };
+  const setLevelInstant = (v) => { levelRef.current = v; setLevel(v); };
+
+  const levelCfg = useMemo(() => {
+    return level === 1
+      ? { finishX: 4200, baseSpeed: 3.2, badChance: 0.30, label: "Warm-up Run" }
+      : { finishX: 5600, baseSpeed: 4.4, badChance: 0.42, label: "Speed Run" };
+  }, [level]);
+
+  // world state
   const stateRef = useRef({
     t: 0,
     player: { x: 120, y: 0, vy: 0, grounded: true },
@@ -381,19 +414,17 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
 
   const theme = "ocean";
 
-    // ✅ HERO IMAGE (loads once and works in Vite/React)
-    const heroRef = useRef(null);
-    const [heroReady, setHeroReady] = useState(false);
-  
-    useEffect(() => {
-      const img = new Image();
-      img.src = player;
-      img.onload = () => {
-        heroRef.current = img;
-        setHeroReady(true);
-      };
-    }, []);
-  
+  // ✅ HERO IMAGE
+  const heroRef = useRef(null);
+  const [heroReady, setHeroReady] = useState(false);
+  useEffect(() => {
+    const img = new Image();
+    img.src = player;
+    img.onload = () => {
+      heroRef.current = img;
+      setHeroReady(true);
+    };
+  }, []);
 
   // keyboard listeners
   useEffect(() => {
@@ -402,8 +433,8 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
       if (e.key === "ArrowRight" || e.key === "d") keys.current.right = true;
       if (e.key === "ArrowUp" || e.key === "w") keys.current.up = true;
       if (e.key === "ArrowDown" || e.key === "s") keys.current.down = true;
-      if (e.code === "Space") keys.current.action = true; // jump
-      if (e.key === "Shift") keys.current.think = true; // slow
+      if (e.code === "Space") keys.current.action = true;
+      if (e.key === "Shift") keys.current.think = true;
     };
     const up = (e) => {
       if (e.key === "ArrowLeft" || e.key === "a") keys.current.left = false;
@@ -421,7 +452,29 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
     };
   }, []);
 
-  const reset = () => {
+  const safeScoreNow = () => Math.max(0, scoreRef.current - footprintsRef.current * 10);
+
+  const reset = (startLevel = 1) => {
+    // clear overlays
+    setBetweenLevels(false);
+    setLevelSummary(null);
+    setDone(false);
+
+    // set level
+    setLevelInstant(startLevel);
+
+    // reset score and lives ONLY when starting from level 1
+    if (startLevel === 1) {
+      setScoreInstant(0);
+      setFootprintsInstant(0);
+      setHpInstant(3);
+    }
+
+    // compute cfg (don’t rely on stale levelCfg)
+    const cfg = startLevel === 1
+      ? { finishX: 4200, baseSpeed: 3.2, badChance: 0.30 }
+      : { finishX: 5600, baseSpeed: 4.4, badChance: 0.42 };
+
     stateRef.current = {
       t: 0,
       player: { x: 120, y: 0, vy: 0, grounded: true },
@@ -431,24 +484,26 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
         y: rand(40, 160),
         s: rand(0.3, 0.7),
       })),
-      finishX: 5200,
+      finishX: cfg.finishX,
       pops: [],
     };
-    setScore(0);
-    setFootprints(0);
-    setDistanceRun(0);
-    setDone(false);
+
     setRunning(true);
   };
 
-  // spawn items along the road
+  // spawn items (per level)
   const ensureItems = () => {
     const st = stateRef.current;
     if (st.items.length > 0) return;
+
     const goodWords = ["Be kind ✅", "Ask first ✅", "Think ✅", "Privacy ✅", "Positive ✅"];
     const badWords = ["Overshare ❌", "Post ID ❌", "Live location ❌", "DM stranger ❌", "Click now ❌"];
+
+    // IMPORTANT: use current level config reliably
+    const badChance = levelRef.current === 1 ? 0.30 : 0.42;
+
     for (let x = 450; x < st.finishX - 200; x += 260) {
-      const isBad = Math.random() < 0.35;
+      const isBad = Math.random() < badChance;
       st.items.push({
         id: Math.random().toString(36).slice(2),
         x,
@@ -462,12 +517,48 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
     }
   };
 
-  const finish = async () => {
+  const finishFinal = async () => {
     setRunning(false);
+    setBetweenLevels(false);
     setDone(true);
+
     setSaving(true);
-    await saveScoreToBackend({ userId, gameId, score: Math.max(0, score - footprints * 10) });
+    await saveScoreToBackend({ userId, gameId, score: safeScoreNow() });
     setSaving(false);
+  };
+
+  const finishLevel = async () => {
+    // died
+    if (hpRef.current <= 0) {
+      await finishFinal();
+      return;
+    }
+
+    const summary = {
+      level: levelRef.current,
+      safeScore: safeScoreNow(),
+      footprints: footprintsRef.current,
+      hp: hpRef.current,
+    };
+
+    // more levels
+    if (levelRef.current < MAX_LEVEL) {
+      setRunning(false);
+      setDone(false);
+      setLevelSummary(summary);
+      setBetweenLevels(true);
+      return;
+    }
+
+    // last level
+    await finishFinal();
+  };
+
+  const nextLevel = () => {
+    const next = Math.min(MAX_LEVEL, levelRef.current + 1);
+    setBetweenLevels(false);
+    setLevelSummary(null);
+    reset(next);
   };
 
   useEffect(() => {
@@ -489,8 +580,12 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
       const groundY = h * 0.72;
 
       // movement
-      let speed = 5.2 * dt;
-      // auto forward to feel like “journey”
+      const cfg = levelRef.current === 1
+        ? { baseSpeed: 3.2 }
+        : { baseSpeed: 4.4 };
+
+      let speed = cfg.baseSpeed * dt;
+
       st.player.x += speed + (keys.current.right ? 2.0 * dt : 0) - (keys.current.left ? 2.4 * dt : 0);
 
       // jump (ACTION)
@@ -509,49 +604,51 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
         st.player.grounded = true;
       }
 
-      // progress
-      setDistanceRun(Math.floor((st.player.x / st.finishX) * 100));
-  // camera follow
-  
-
       // collisions
       const px = st.player.x;
       const camX = clamp(px - w * 0.35, 0, st.finishX - w * 0.2);
-      const py = groundY - 55 - st.player.y; // y above ground
+      const py = groundY - 55 - st.player.y;
+
       for (const item of st.items) {
         if (item.hit) continue;
         const ix = item.x;
         const iy = groundY - 25;
+
         if (dist(px, py - 40, ix, iy) < 60) {
           item.hit = true;
-        
+
           const popX = ix - camX;
           const popY = iy - 30;
-        
+
           if (item.type === "good") {
-            setScore((s) => s + 80);
+            setScoreInstant(scoreRef.current + 80);
             spawnPop(st.pops, { x: popX, y: popY, text: "+80", good: true, emoji: "✅" });
           } else {
-            setFootprints((f) => f + 1);
-            setScore((s) => Math.max(0, s - 30));
-            spawnPop(st.pops, { x: popX, y: popY, text: "-30", good: false, emoji: "⚠️" });
+            setFootprintsInstant(footprintsRef.current + 1);
+            setScoreInstant(Math.max(0, scoreRef.current - 30));
+            setHpInstant(Math.max(0, hpRef.current - 1));
+            spawnPop(st.pops, { x: popX, y: popY, text: "-1 LIFE", good: false, emoji: "💥" });
+
+            // if died, end immediately
+            if (hpRef.current <= 0) {
+              finishLevel();
+              return;
+            }
           }
         }
       }
 
-      // finish check
+      // finish line
       if (st.player.x >= st.finishX) {
-        finish();
+        finishLevel();
         return;
       }
 
       // draw
       ctx.clearRect(0, 0, w, h);
-
-      // background
       drawParallaxBackground(ctx, w, h, st.t, "ocean");
 
-      // clouds + stars
+      // stars
       ctx.fillStyle = "rgba(255,255,255,0.08)";
       for (let i = 0; i < 90; i++) {
         ctx.beginPath();
@@ -559,7 +656,6 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
         ctx.fill();
       }
 
-    
       // road
       ctx.fillStyle = "#0f172a";
       ctx.fillRect(0, groundY, w, h - groundY);
@@ -590,8 +686,8 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
         ctx.textAlign = "center";
         ctx.fillText(item.type === "good" ? "✅" : "⚠️", x, groundY - 20);
 
-               // ✅ label (big pill)
-        const label = item.text;        
+        // label pill
+        const label = item.text;
 
         ctx.save();
         ctx.font = `900 ${Math.round(w * 0.018)}px system-ui`;
@@ -600,25 +696,24 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
         const pillW = tw + padX * 2;
         const pillH = 34;
         const pillX = x - pillW / 2;
-        const pillY = groundY - 92;       
+        const pillY = groundY - 92;
 
         ctx.shadowColor = "rgba(0,0,0,0.35)";
         ctx.shadowBlur = 12;
         ctx.fillStyle = "rgba(2,6,23,0.85)";
         ctx.beginPath();
         ctx.roundRect(pillX, pillY, pillW, pillH, 16);
-        ctx.fill();       
+        ctx.fill();
 
         ctx.shadowBlur = 0;
         ctx.strokeStyle = item.type === "good" ? "rgba(34,197,94,0.55)" : "rgba(239,68,68,0.55)";
         ctx.lineWidth = 2;
-        ctx.stroke();       
+        ctx.stroke();
 
         ctx.fillStyle = "#e2e8f0";
         ctx.textAlign = "center";
         ctx.fillText(label, x, pillY + 24);
         ctx.restore();
-
       }
 
       // finish flag
@@ -640,84 +735,53 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
         ctx.fillText("FINISH", fx + 80, groundY - 130);
       }
 
-      // player
-    //   const rx = px - camX;
-    //   ctx.save();
-    //   ctx.translate(rx, py);
-    //   // body
-    //   ctx.fillStyle = "#60a5fa";
-    //   ctx.beginPath();
-    //   ctx.roundRect(-22, -34, 44, 48, 14);
-    //   ctx.fill();
-    //   // face
-    //   ctx.fillStyle = "#0b1020";
-    //   ctx.beginPath();
-    //   ctx.arc(-8, -12, 4, 0, Math.PI * 2);
-    //   ctx.arc(8, -12, 4, 0, Math.PI * 2);
-    //   ctx.fill();
-    //   // cape
-    //   ctx.fillStyle = "rgba(34,197,94,0.65)";
-    //   ctx.beginPath();
-    //   ctx.moveTo(-22, -30);
-    //   ctx.lineTo(-56, -18);
-    //   ctx.lineTo(-22, 10);
-    //   ctx.closePath();
-    //   ctx.fill();
-    //   ctx.restore();
+      // player sprite
+      const rx = px - camX;
+      const HERO_W = 120;
+      const HERO_H = 140;
 
-        // ✅ PLAYER (hero sprite)
-        const rx = px - camX;
+      if (heroReady && heroRef.current) {
+        ctx.drawImage(heroRef.current, rx - HERO_W / 2, py - HERO_H, HERO_W, HERO_H);
+      } else {
+        ctx.fillStyle = "#60a5fa";
+        ctx.beginPath();
+        ctx.roundRect(rx - 24, py - 70, 48, 70, 14);
+        ctx.fill();
+      }
 
-        const HERO_W = 120; // bigger for kids
-        const HERO_H = 140;
-  
-        if (heroReady && heroRef.current) {
-          ctx.drawImage(
-            heroRef.current,
-            rx - HERO_W / 2,
-            py - HERO_H,
-            HERO_W,
-            HERO_H
-          );
-        } else {
-          // fallback while loading
-          ctx.fillStyle = "#60a5fa";
-          ctx.beginPath();
-          ctx.roundRect(rx - 24, py - 70, 48, 70, 14);
-          ctx.fill();
-        }
-  
       drawPops(ctx, st.pops, w);
 
-      // HUD overlay
+      // HUD
       ctx.fillStyle = "rgba(2,6,23,0.5)";
-      ctx.fillRect(18, 18, w - 36, 64);
+      ctx.fillRect(18, 18, w - 36, 78);
 
       ctx.fillStyle = "#e2e8f0";
       ctx.font = `800 ${Math.round(w * 0.02)}px system-ui`;
       ctx.textAlign = "left";
-      ctx.fillText("👣 Digital Footprint Trail Run", 32, 58);
+      ctx.fillText("👣 Digital Footprint Trail Run", 32, 52);
 
-      // meters
-      const safeScore = Math.max(0, score - footprints * 10);
+      // HUD right
       ctx.font = `700 ${Math.round(w * 0.016)}px system-ui`;
       ctx.textAlign = "right";
-      ctx.fillText(`Score: ${safeScore}`, w - 28, 44);
-      ctx.fillText(`Footprints: ${footprints}`, w - 28, 66);
+      ctx.fillText(`Level: ${levelRef.current}/${MAX_LEVEL}`, w - 28, 44);
+      ctx.fillText(`Lives: ${"❤️".repeat(hpRef.current)}`, w - 28, 66);
+      ctx.fillText(`Score: ${safeScoreNow()}`, w - 28, 88);
 
       // progress bar
       const pct = clamp((px / st.finishX) * 100, 0, 100);
       ctx.fillStyle = "rgba(148,163,184,0.25)";
-      ctx.fillRect(32, 76, w - 64, 10);
+      ctx.fillRect(32, 102, w - 64, 10);
       ctx.fillStyle = "#22c55e";
-      ctx.fillRect(32, 76, ((w - 64) * pct) / 100, 10);
+      ctx.fillRect(32, 102, ((w - 64) * pct) / 100, 10);
 
       raf = requestAnimationFrame(loop);
     };
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [running, w, h, score, footprints]);
+  }, [running, w, h, heroReady]);
+
+  const safeScore = Math.max(0, score - footprints * 10);
 
   const instructions = (
     <>
@@ -725,19 +789,17 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
       <b>Collect:</b> ✅ Good choices (privacy, kindness, think before posting). <br />
       <b>Avoid:</b> ⚠️ Oversharing traps (ID, live location, strangers). <br />
       <b>Controls:</b> ⬅➡ move (A/D), ⭐ ACTION = jump (Space), 🧠 THINK = slow-motion (Shift). <br />
-      <b>Tip:</b> Use THINK before a risky item so you can react safely.
+      <b>Lives:</b> You have 3 ❤️. Each bad item costs 1 life.
     </>
   );
-  
-  const safeScore = Math.max(0, score - footprints * 10);
 
   return (
     <MissionFrame
       embedded={embedded}
       title="Topic 1 Mini-Game"
-      subtitle="My Digital Footprint — Journey Run"
+      subtitle={`My Digital Footprint — ${levelCfg.label}`}
       instructions={instructions}
-      badgeLeft={`👣 Footprints: ${footprints}`}
+      badgeLeft={`🧭 Level: ${level}/${MAX_LEVEL} | ❤️ ${hp}`}
       badgeRight={`🏆 Score: ${safeScore}`}
       onBack={onBack || (() => window.history.back())}
       theme={theme}
@@ -745,31 +807,63 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
       <div ref={containerRef} style={ui.gameArea}>
         <div style={ui.canvasShell}>
           <canvas ref={canvasRef} width={w} height={h} style={ui.canvas} />
-          {(!running && !done) && (
+
+          {/* Start overlay */}
+          {!running && !done && !betweenLevels && (
             <div style={ui.overlay}>
               <div style={ui.overlayCard}>
                 <div style={ui.overlayTitle}>Ready to run? 🏃‍♂️✨</div>
                 <div style={ui.overlayText}>
-                  Your mission is to make smart choices while you travel online.
-                  Collect good choices, avoid oversharing, and finish strong!
+                  Collect good choices, avoid oversharing traps, and reach the finish!
                 </div>
-                <button style={ui.primaryBtn} onClick={reset}>🚀 Start Journey</button>
+                <button style={ui.primaryBtn} onClick={() => reset(1)}>
+                  🚀 Start Level 1
+                </button>
               </div>
             </div>
           )}
 
+          {/* Between Levels overlay */}
+          {betweenLevels && (
+            <div style={ui.overlay}>
+              <div style={ui.overlayCard}>
+                <div style={ui.overlayTitle}>Level {levelSummary?.level} Complete! ✅</div>
+                <div style={ui.overlayText}>
+                  Score so far: <b>{levelSummary?.safeScore}</b>
+                  <br />
+                  Footprints: <b>{levelSummary?.footprints}</b>
+                  <br />
+                  Lives left: <b>{levelSummary?.hp}</b>
+                </div>
+
+                <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+                  <button style={ui.primaryBtn} onClick={nextLevel}>
+                    ➡ Next Level
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Final done overlay */}
           {done && (
             <div style={ui.overlay}>
               <div style={ui.overlayCard}>
-                <div style={ui.overlayTitle}>Mission Complete! 🎉</div>
+                <div style={ui.overlayTitle}>
+                  {hp > 0 ? "Mission Complete! 🎉" : "Game Over 💥"}
+                </div>
                 <div style={ui.overlayText}>
                   Final Score: <b>{safeScore}</b>
                   <br />
                   Footprints: <b>{footprints}</b>
+                  <br />
+                  Lives left: <b>{hp}</b>
                 </div>
                 <div style={ui.overlaySmall}>{saving ? "Saving score..." : "Score saved ✅"}</div>
                 <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-                  <button style={ui.primaryBtn} onClick={reset}>🔁 Play Again</button>
+                  <button style={ui.primaryBtn} onClick={() => reset(1)}>
+                    🔁 Play Again
+                  </button>
                 </div>
               </div>
             </div>
@@ -783,10 +877,10 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
 }
 
 // ============================================================
-// TOPIC 2 — Personal Info Treasure Guard (different game)
-// mechanic: top-down journey, escort treasure to exit,
-// “pirates” approach asking info; press ACTION near them to block with a “NO!” shield.
-// Collect locks/keys for bonus.
+// TOPIC 2 — Personal Info Treasure Guard (WITH LEVELS + NEXT BUTTON)
+// - Level 1 -> interval -> Next Level -> Level 2
+// - 3 hearts (lives). Pirate touch = -1 life
+// - Save score ONLY after last level (or if you die)
 // ============================================================
 export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false }) {
   const containerRef = useRef(null);
@@ -794,11 +888,33 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
   const keys = useRef({ left: false, right: false, up: false, down: false, action: false, think: false });
   const { w, h } = useCanvasSize(containerRef, 16 / 9);
 
+  const MAX_LEVEL = 2;
+
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [level, setLevel] = useState(1);
+  const levelRef = useRef(1);
+
+  const [betweenLevels, setBetweenLevels] = useState(false);
+  const [levelSummary, setLevelSummary] = useState(null);
+
   const [score, setScore] = useState(0);
   const [hp, setHp] = useState(3);
-  const [saving, setSaving] = useState(false);
+
+  const scoreRef = useRef(0);
+  const hpRef = useRef(3);
+
+  const setScoreInstant = (v) => { scoreRef.current = v; setScore(v); };
+  const setHpInstant = (v) => { hpRef.current = v; setHp(v); };
+  const setLevelInstant = (v) => { levelRef.current = v; setLevel(v); };
+
+  const levelCfg = useMemo(() => {
+    return level === 1
+      ? { exitX: 2600, pirates: 10, pirateSpeed: [0.6, 1.2], goodies: 14, label: "Harbor Patrol" }
+      : { exitX: 3200, pirates: 14, pirateSpeed: [0.9, 1.7], goodies: 18, label: "Open Sea Rush" };
+  }, [level]);
 
   const stRef = useRef({
     t: 0,
@@ -812,19 +928,14 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
     pops: [],
   });
 
-  
-    // ✅ HERO IMAGE (loads once and works in Vite/React)
-    const heroRef = useRef(null);
-    const [heroReady, setHeroReady] = useState(false);
-  
-    useEffect(() => {
-      const img = new Image();
-      img.src = player;
-      img.onload = () => {
-        heroRef.current = img;
-        setHeroReady(true);
-      };
-    }, []);
+  // ✅ HERO IMAGE
+  const heroRef = useRef(null);
+  const [heroReady, setHeroReady] = useState(false);
+  useEffect(() => {
+    const img = new Image();
+    img.src = player;
+    img.onload = () => { heroRef.current = img; setHeroReady(true); };
+  }, []);
 
   useEffect(() => {
     const down = (e) => {
@@ -851,25 +962,32 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
     };
   }, []);
 
-  const reset = () => {
+  const spawnLevel = (startLevel) => {
+    const PATH_Y_MIN = 120;       // ✅ inside playable area
+    const PATH_Y_MAX = h - 140;   // ✅ inside playable area
+  
+    const cfg = startLevel === 1
+      ? { exitX: 2600, pirates: 10, pirateSpeed: [0.6, 1.2], goodies: 14 }
+      : { exitX: 3200, pirates: 14, pirateSpeed: [0.9, 1.7], goodies: 18 };
+
     stRef.current = {
       t: 0,
       player: { x: 180, y: 220, r: 18 },
       treasure: { x: 160, y: 240, carried: true },
-      exit: { x: 2600, y: 320, r: 36 },
-      pirates: Array.from({ length: 10 }).map((_, i) => ({
+      exit: { x: cfg.exitX, y: 320, r: 36 },
+      pirates: Array.from({ length: cfg.pirates }).map((_, i) => ({
         id: "p" + i,
         x: 520 + i * 220 + rand(-40, 40),
-        y: rand(140, 520),
+        y: rand(PATH_Y_MIN, PATH_Y_MAX),
         r: 18,
-        speed: rand(0.6, 1.2),
+        speed: rand(cfg.pirateSpeed[0], cfg.pirateSpeed[1]),
         msg: ["Name?", "Birthday?", "School?", "Address?", "Password?"][Math.floor(rand(0, 5))],
         hit: false,
       })),
-      goodies: Array.from({ length: 14 }).map((_, i) => ({
+      goodies: Array.from({ length: cfg.goodies }).map((_, i) => ({
         id: "g" + i,
         x: 360 + i * 170 + rand(-30, 30),
-        y: rand(140, 520),
+        y:rand(PATH_Y_MIN, PATH_Y_MAX),
         r: 14,
         taken: false,
       })),
@@ -877,18 +995,67 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
       camX: 0,
       pops: [],
     };
-    setScore(0);
-    setHp(3);
+  };
+
+  const reset = (startLevel = 1) => {
+    const PATH_Y_MIN = 120;       // ✅ inside playable area
+    const PATH_Y_MAX = h - 140;   // ✅ inside playable area
+  
+    setBetweenLevels(false);
+    setLevelSummary(null);
     setDone(false);
+
+    setLevelInstant(startLevel);
+
+    // reset score/hp ONLY when starting from level 1
+    if (startLevel === 1) {
+      setScoreInstant(0);
+      setHpInstant(3);
+    }
+
+    spawnLevel(startLevel);
     setRunning(true);
   };
 
-  const finish = async () => {
+  const finishFinal = async () => {
     setRunning(false);
+    setBetweenLevels(false);
     setDone(true);
+
     setSaving(true);
-    await saveScoreToBackend({ userId, gameId, score });
+    await saveScoreToBackend({ userId, gameId, score: scoreRef.current });
     setSaving(false);
+  };
+
+  const finishLevel = async () => {
+    // died
+    if (hpRef.current <= 0) {
+      await finishFinal();
+      return;
+    }
+
+    const summary = {
+      level: levelRef.current,
+      score: scoreRef.current,
+      hp: hpRef.current,
+    };
+
+    if (levelRef.current < MAX_LEVEL) {
+      setRunning(false);
+      setDone(false);
+      setLevelSummary(summary);
+      setBetweenLevels(true);
+      return;
+    }
+
+    await finishFinal();
+  };
+
+  const nextLevel = () => {
+    const next = Math.min(MAX_LEVEL, levelRef.current + 1);
+    setBetweenLevels(false);
+    setLevelSummary(null);
+    reset(next);
   };
 
   useEffect(() => {
@@ -934,8 +1101,9 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
         st.shield.t -= 1;
         if (st.shield.t <= 0) st.shield.active = false;
       }
+
+      // camera follow
       const camX = st.camX;
-      // camera follow (wide journey)
       st.camX = clamp(st.player.x - w * 0.35, 0, st.exit.x - w * 0.3);
 
       // goodies
@@ -943,72 +1111,54 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
         if (g.taken) continue;
         if (dist(st.player.x, st.player.y, g.x, g.y) < st.player.r + g.r + 6) {
           g.taken = true;
-          setScore((s) => s + 60);
+          setScoreInstant(scoreRef.current + 60);
         }
       }
 
       // pirates chase
       for (const p of st.pirates) {
         if (p.hit) continue;
-        // move toward player (but slow)
+
         const dx = st.player.x - p.x;
         const dy = st.player.y - p.y;
         const L = Math.max(1, Math.hypot(dx, dy));
         p.x += (dx / L) * p.speed * dt;
         p.y += (dy / L) * p.speed * dt;
 
-        // if shield active and close => block pirate
         if (st.shield.active && dist(st.player.x, st.player.y, p.x, p.y) < 70) {
           p.hit = true;
-          setScore((s) => s + 120);
-
-          spawnPop(st.pops, {
-            x: (p.x - camX),
-            y: p.y - 30,
-            text: "+120 NO!",
-            good: true,
-            emoji: "🛡️",
-          })
+          setScoreInstant(scoreRef.current + 120);
+          spawnPop(st.pops, { x: (p.x - camX), y: p.y - 30, text: "+120 NO!", good: true, emoji: "🛡️" });
         } else if (dist(st.player.x, st.player.y, p.x, p.y) < st.player.r + p.r + 6) {
-          // pirate hits you => lose HP
           p.hit = true;
-          setHp((hpNow) => Math.max(0, hpNow - 1));
+          setHpInstant(Math.max(0, hpRef.current - 1));
+          spawnPop(st.pops, { x: (p.x - camX), y: p.y - 30, text: "-1 LIFE", good: false, emoji: "💥" });
 
-          spawnPop(st.pops, {
-            x: (p.x - camX),
-            y: p.y - 30,
-            text: "-1 LIFE",
-            good: false,
-            emoji: "💥",
-          });
+          if (hpRef.current <= 0) {
+            finishLevel();
+            return;
+          }
         }
-      }
-
-      // lose condition
-      if (hp <= 0) {
-        setRunning(false);
-        setDone(true);
-        return;
       }
 
       // win condition: reach exit with treasure
       if (dist(st.player.x, st.player.y, st.exit.x, st.exit.y) < st.exit.r + 22) {
-        setScore((s) => s + 200);
-        finish();
+        setScoreInstant(scoreRef.current + 200);
+        finishLevel();
         return;
       }
 
       // draw
       ctx.clearRect(0, 0, w, h);
-     
-      // background (ocean map)
+
+      // background
       const g = ctx.createLinearGradient(0, 0, 0, h);
       g.addColorStop(0, "#081b2a");
       g.addColorStop(1, "#04111c");
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
 
-      // path (sand)
+      // path
       ctx.fillStyle = "rgba(234,179,8,0.12)";
       ctx.fillRect(0, 110, w, h - 200);
 
@@ -1021,10 +1171,10 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
         ctx.fill();
       }
 
-     // const camX = st.camX;
+      const cam = st.camX;
 
-      // exit gate
-      const ex = st.exit.x - camX;
+      // exit
+      const ex = st.exit.x - cam;
       ctx.fillStyle = "#22c55e";
       ctx.beginPath();
       ctx.arc(ex, st.exit.y, st.exit.r, 0, Math.PI * 2);
@@ -1034,10 +1184,10 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
       ctx.textAlign = "center";
       ctx.fillText("SAFE", ex, st.exit.y + 8);
 
-      // goodies (keys)
+      // goodies
       for (const k of st.goodies) {
         if (k.taken) continue;
-        const x = k.x - camX;
+        const x = k.x - cam;
         if (x < -80 || x > w + 80) continue;
         ctx.fillStyle = "#93c5fd";
         ctx.beginPath();
@@ -1051,7 +1201,7 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
       // pirates
       for (const p of st.pirates) {
         if (p.hit) continue;
-        const x = p.x - camX;
+        const x = p.x - cam;
         if (x < -120 || x > w + 120) continue;
 
         ctx.fillStyle = "#ef4444";
@@ -1064,14 +1214,13 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
         ctx.textAlign = "center";
         ctx.fillText("🏴‍☠️", x, p.y + 6);
 
-        // speech bubble
         ctx.fillStyle = "rgba(226,232,240,0.95)";
         ctx.font = `800 ${Math.round(w * 0.014)}px system-ui`;
         ctx.fillText(p.msg, x, p.y - 26);
       }
 
       // treasure
-      const tx = st.treasure.x - camX;
+      const tx = st.treasure.x - cam;
       ctx.fillStyle = "#f97316";
       ctx.beginPath();
       ctx.roundRect(tx - 18, st.treasure.y - 14, 36, 28, 10);
@@ -1081,31 +1230,21 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
       ctx.textAlign = "center";
       ctx.fillText("💎", tx, st.treasure.y + 6);
 
-
-      // player (PLAYER ICON)
-      const px = st.player.x - camX;
-
+      // player (sprite)
+      const px = st.player.x - cam;
       const HERO_W = 90;
       const HERO_H = 110;
 
       if (heroReady && heroRef.current) {
-        ctx.drawImage(
-          heroRef.current,
-          px - HERO_W / 2,
-          st.player.y - HERO_H / 2,
-          HERO_W,
-          HERO_H
-        );
+        ctx.drawImage(heroRef.current, px - HERO_W / 2, st.player.y - HERO_H / 2, HERO_W, HERO_H);
       } else {
-        // fallback while loading
         ctx.fillStyle = "#60a5fa";
         ctx.beginPath();
         ctx.roundRect(px - 18, st.player.y - 22, 36, 44, 12);
         ctx.fill();
       }
 
-
-      // shield ring
+      // shield
       if (st.shield.active) {
         ctx.strokeStyle = "rgba(34,197,94,0.85)";
         ctx.lineWidth = 8;
@@ -1117,44 +1256,47 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
         ctx.font = `900 ${Math.round(w * 0.02)}px system-ui`;
         ctx.fillText("NO!", px, st.player.y - 60);
       }
+
       drawPops(ctx, st.pops, w);
+
       // HUD
       ctx.fillStyle = "rgba(2,6,23,0.55)";
-      ctx.fillRect(18, 18, w - 36, 62);
+      ctx.fillRect(18, 18, w - 36, 72);
 
       ctx.fillStyle = "#e2e8f0";
       ctx.font = `900 ${Math.round(w * 0.02)}px system-ui`;
       ctx.textAlign = "left";
-      ctx.fillText("🧰 Personal Info Treasure Guard", 32, 56);
+      ctx.fillText("🧰 Personal Info Treasure Guard", 32, 52);
 
       ctx.textAlign = "right";
       ctx.font = `800 ${Math.round(w * 0.016)}px system-ui`;
-      ctx.fillText(`Score: ${score}`, w - 28, 44);
-      ctx.fillText(`Lives: ${"❤️".repeat(hp)}`, w - 28, 66);
+      ctx.fillText(`Level: ${levelRef.current}/${MAX_LEVEL}`, w - 28, 44);
+      ctx.fillText(`Score: ${scoreRef.current}`, w - 28, 66);
+      ctx.fillText(`Lives: ${"❤️".repeat(hpRef.current)}`, w - 28, 88);
 
       raf = requestAnimationFrame(loop);
     };
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [running, w, h, score, hp]);
+  }, [running, w, h, heroReady]);
 
   const instructions = (
     <>
       <b>Goal:</b> Escort the 💎 treasure to the SAFE zone without giving info to pirates. <br />
       <b>Collect:</b> 🔑 Keys for bonus points. <br />
       <b>Danger:</b> 🏴‍☠️ Pirates ask “Name? Birthday? Address?” — don’t let them touch you. <br />
-      <b>Controls:</b> ⬅⬆⬇➡ move, ⭐ ACTION (Space) = shield “NO!” blast near pirates, 🧠 THINK (Shift) = slow mode.
+      <b>Controls:</b> Move with arrows. ⭐ ACTION (Space) = shield “NO!” blast. 🧠 THINK (Shift) = slow mode.
     </>
   );
-  
+
   return (
     <MissionFrame
       embedded={embedded}
       title="Topic 2 Mini-Game"
-      subtitle="Personal Information — Treasure Guard Journey"
+      subtitle={`Personal Information — ${levelCfg.label}`}
       instructions={instructions}
-      badgeLeft={`❤️ Lives: ${hp}`}
+      badgeLeft={`🧭 Level: ${level}/${MAX_LEVEL} | ❤️ ${hp}`}
       badgeRight={`🏆 Score: ${score}`}
       onBack={onBack || (() => window.history.back())}
       theme="ocean"
@@ -1163,25 +1305,38 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
         <div style={ui.canvasShell}>
           <canvas ref={canvasRef} width={w} height={h} style={ui.canvas} />
 
-          {(!running && !done) && (
+          {!running && !done && !betweenLevels && (
             <div style={ui.overlay}>
               <div style={ui.overlayCard}>
                 <div style={ui.overlayTitle}>Guard your treasure! 💎</div>
                 <div style={ui.overlayText}>
                   Pirates want your personal info. Use your shield to block them and reach the SAFE zone.
                 </div>
-                <button style={ui.primaryBtn} onClick={reset}>🧭 Start Journey</button>
+                <button style={ui.primaryBtn} onClick={() => reset(1)}>🧭 Start Level 1</button>
               </div>
             </div>
           )}
 
-          {done && !running && (
+          {betweenLevels && (
             <div style={ui.overlay}>
               <div style={ui.overlayCard}>
-                <div style={ui.overlayTitle}>{hp > 0 ? "You made it! 🎉" : "Oof! Try again 💪"}</div>
+                <div style={ui.overlayTitle}>Level {levelSummary?.level} Complete! ✅</div>
+                <div style={ui.overlayText}>
+                  Score so far: <b>{levelSummary?.score}</b><br />
+                  Lives left: <b>{levelSummary?.hp}</b>
+                </div>
+                <button style={ui.primaryBtn} onClick={nextLevel}>➡ Next Level</button>
+              </div>
+            </div>
+          )}
+
+          {done && (
+            <div style={ui.overlay}>
+              <div style={ui.overlayCard}>
+                <div style={ui.overlayTitle}>{hp > 0 ? "You made it! 🎉" : "Game Over 💥"}</div>
                 <div style={ui.overlayText}>Final Score: <b>{score}</b></div>
                 <div style={ui.overlaySmall}>{saving ? "Saving score..." : "Score saved ✅"}</div>
-                <button style={ui.primaryBtn} onClick={reset}>🔁 Play Again</button>
+                <button style={ui.primaryBtn} onClick={() => reset(1)}>🔁 Play Again</button>
               </div>
             </div>
           )}
@@ -1192,12 +1347,12 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
     </MissionFrame>
   );
 }
-
 // ============================================================
-// TOPIC 3 — Password Forge (different game)
-// mechanic: lane runner + collect password tiles to build a strong passphrase.
-// Collect: LENGTH, SYMBOL, NUMBER, UNIQUE. Avoid REUSE goblins.
-// When you collect all 4, you unlock the gate and finish.
+// TOPIC 3 — Password Forge (WITH LEVELS + NEXT BUTTON)
+// - Level 1 -> interval -> Next Level -> Level 2
+// - Level affects: forward speed, gate distance, reuse chance, item density
+// - You ONLY advance levels if you WIN (all 4 parts before gate)
+// - Save score ONLY after last level
 // ============================================================
 export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false }) {
   const containerRef = useRef(null);
@@ -1205,46 +1360,57 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
   const keys = useRef({ left: false, right: false, up: false, down: false, action: false, think: false });
   const { w, h } = useCanvasSize(containerRef, 16 / 9);
 
+  const MAX_LEVEL = 2;
+
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [level, setLevel] = useState(1);
+  const levelRef = useRef(1);
+
+  const [betweenLevels, setBetweenLevels] = useState(false);
+  const [levelSummary, setLevelSummary] = useState(null);
+
   const [score, setScore] = useState(0);
   const [parts, setParts] = useState({ length: false, symbol: false, number: false, unique: false });
   const [strikes, setStrikes] = useState(0);
-  const [saving, setSaving] = useState(false);
 
   const scoreRef = useRef(0);
   const strikesRef = useRef(0);
   const partsRef = useRef({ length: false, symbol: false, number: false, unique: false });
+
   const [paused, setPaused] = useState(false);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState(null); // "win" | "locked"
 
   const setScoreInstant = (v) => { scoreRef.current = v; setScore(v); };
   const setStrikesInstant = (v) => { strikesRef.current = v; setStrikes(v); };
   const setPartsInstant = (v) => { partsRef.current = v; setParts(v); };
+  const setLevelInstant = (v) => { levelRef.current = v; setLevel(v); };
 
+  const levelCfg = useMemo(() => {
+    return level === 1
+      ? { gateX: 3600, speed: 6.0, reuseChance: 0.22, step: 200, label: "Training Forge" }
+      : { gateX: 4300, speed: 7.3, reuseChance: 0.33, step: 170, label: "Master Forge" };
+  }, [level]);
 
   const stRef = useRef({
     t: 0,
-    lane: 1, // 0,1,2
+    lane: 1,
     x: 0,
     items: [],
     gateX: 3600,
     pops: [],
   });
 
-  
-    // ✅ HERO IMAGE (loads once and works in Vite/React)
-    const heroRef = useRef(null);
-    const [heroReady, setHeroReady] = useState(false);
-  
-    useEffect(() => {
-      const img = new Image();
-      img.src = player;
-      img.onload = () => {
-        heroRef.current = img;
-        setHeroReady(true);
-      };
-    }, []);
+  // ✅ HERO IMAGE
+  const heroRef = useRef(null);
+  const [heroReady, setHeroReady] = useState(false);
+  useEffect(() => {
+    const img = new Image();
+    img.src = player;
+    img.onload = () => { heroRef.current = img; setHeroReady(true); };
+  }, []);
 
   useEffect(() => {
     const down = (e) => {
@@ -1271,28 +1437,18 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
     };
   }, []);
 
-  const reset = () => {
-    stRef.current = {
-      t: 0,
-      lane: 1,
-      x: 0,
-      gateX: 3600,
-      items: [],
-    };
+  const allCompleteNow = () => {
+    const p = partsRef.current;
+    return p.length && p.symbol && p.number && p.unique;
+  };
 
-    stRef.current.pops = [];
+  const spawnItemsForLevel = (startLevel) => {
+    const cfg = startLevel === 1
+      ? { gateX: 3600, reuseChance: 0.22, step: 200 }
+      : { gateX: 4300, reuseChance: 0.33, step: 170 };
 
-    scoreRef.current = 0;
-    strikesRef.current = 0;
-    partsRef.current = { length: false, symbol: false, number: false, unique: false };
+    stRef.current = { t: 0, lane: 1, x: 0, gateX: cfg.gateX, items: [], pops: [] };
 
-    setScore(0);
-    setStrikes(0);
-    setParts({ length: false, symbol: false, number: false, unique: false });
-    setPaused(false);
-    setResult(null);
-
-    // spawn items along journey
     const types = [
       { k: "length", label: "LONG", emoji: "📏", good: true },
       { k: "symbol", label: "SYMBOL", emoji: "✨", good: true },
@@ -1301,9 +1457,9 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
       { k: "reuse", label: "REUSE!", emoji: "👾", good: false },
     ];
 
-    for (let x = 280; x < 3400; x += 200) {
+    for (let x = 280; x < cfg.gateX - 200; x += cfg.step) {
       const lane = Math.floor(rand(0, 3));
-      const pick = Math.random() < 0.22
+      const pick = Math.random() < cfg.reuseChance
         ? types.find((t) => t.k === "reuse")
         : types[Math.floor(rand(0, 4))];
 
@@ -1318,36 +1474,73 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
         taken: false,
       });
     }
+  };
 
-    setScore(0);
-    setParts({ length: false, symbol: false, number: false, unique: false });
-    setStrikes(0);
+  const reset = (startLevel = 1) => {
+    setBetweenLevels(false);
+    setLevelSummary(null);
     setDone(false);
+    setResult(null);
+    setPaused(false);
+
+    setLevelInstant(startLevel);
+
+    // reset score/parts/strikes ONLY if starting from level 1
+    if (startLevel === 1) {
+      setScoreInstant(0);
+      setStrikesInstant(0);
+      setPartsInstant({ length: false, symbol: false, number: false, unique: false });
+    } else {
+      // keep score; but new level requires new parts
+      setPartsInstant({ length: false, symbol: false, number: false, unique: false });
+    }
+
+    spawnItemsForLevel(startLevel);
     setRunning(true);
   };
 
-  const allCompleteNow = () => {
-  const p = partsRef.current;
-  return p.length && p.symbol && p.number && p.unique;
-};
+  const finishFinalWin = async () => {
+    setRunning(false);
+    setBetweenLevels(false);
+    setDone(true);
+    setResult("win");
 
+    setSaving(true);
+    await saveScoreToBackend({ userId, gameId, score: scoreRef.current });
+    setSaving(false);
+  };
 
-const finishWin = async () => {
-  setRunning(false);
-  setDone(true);
-  setResult("win");
-  setSaving(true);
-  await saveScoreToBackend({ userId, gameId, score });
-  setSaving(false);
-};
+  const finishWinLevel = async () => {
+    const summary = {
+      level: levelRef.current,
+      score: scoreRef.current,
+      strikes: strikesRef.current,
+    };
 
-const finishLocked = () => {
-  setRunning(false);
-  setDone(true);
-  setResult("locked");
-  // no saving here (optional)
-};
+    if (levelRef.current < MAX_LEVEL) {
+      setRunning(false);
+      setDone(false);
+      setResult(null);
+      setLevelSummary(summary);
+      setBetweenLevels(true);
+      return;
+    }
 
+    await finishFinalWin();
+  };
+
+  const finishLocked = () => {
+    setRunning(false);
+    setDone(true);
+    setResult("locked");
+  };
+
+  const nextLevel = () => {
+    const next = Math.min(MAX_LEVEL, levelRef.current + 1);
+    setBetweenLevels(false);
+    setLevelSummary(null);
+    reset(next);
+  };
 
   useEffect(() => {
     if (!running) return;
@@ -1366,69 +1559,60 @@ const finishLocked = () => {
       // lane change
       if (keys.current.up) { st.lane = clamp(st.lane - 1, 0, 2); keys.current.up = false; }
       if (keys.current.down) { st.lane = clamp(st.lane + 1, 0, 2); keys.current.down = false; }
+
+      // ACTION toggles pause
       if (keys.current.action) {
         setPaused((p) => !p);
-        keys.current.action = false; // IMPORTANT: prevent rapid toggles
+        keys.current.action = false;
       }
-      // forward
-      if (!paused) st.x += 6.0 * dt;
 
-      // collision check at player position
-      const playerX = st.x;
+      // forward speed by level
+      const speed = (levelRef.current === 1 ? 6.0 : 7.3);
+      if (!paused) st.x += speed * dt;
+
       const laneY = (lane) => h * (0.34 + lane * 0.18);
+      const playerX = st.x;
       const cam = st.x;
+
+      // collisions
       for (const it of st.items) {
         if (it.taken) continue;
-        const dx = Math.abs((it.x) - playerX);
+        const dx = Math.abs(it.x - playerX);
         const dy = Math.abs(laneY(it.lane) - laneY(st.lane));
         if (dx < 34 && dy < 18) {
           it.taken = true;
-         // camera
-          
+
           const popX = (it.x - cam + 140);
           const popY = laneY(it.lane) - 40;
-        
+
           if (it.good) {
             const nextParts = { ...partsRef.current, [it.type]: true };
             setPartsInstant(nextParts);
-        
-            const nextScore = scoreRef.current + 120;
-            setScoreInstant(nextScore);
-        
+            setScoreInstant(scoreRef.current + 120);
             spawnPop(st.pops, { x: popX, y: popY, text: "+120", good: true, emoji: "✨" });
           } else {
-            const nextStrikes = strikesRef.current + 1;
-            setStrikesInstant(nextStrikes);
-        
-            const nextScore = Math.max(0, scoreRef.current - 80);
-            setScoreInstant(nextScore);
-        
+            setStrikesInstant(strikesRef.current + 1);
+            setScoreInstant(Math.max(0, scoreRef.current - 80));
             spawnPop(st.pops, { x: popX, y: popY, text: "-80", good: false, emoji: "👾" });
           }
         }
-        
       }
 
-      // win: pass gate AND all parts collected
+      // gate check
       if (st.x >= st.gateX) {
         if (allCompleteNow()) {
-          setScore((s) => s + 250);
-          // use a tiny timeout so score state applies before saving UI shows
-          setTimeout(() => finishWin(), 0);
+          setScoreInstant(scoreRef.current + 250);
+          // tiny defer so UI updates cleanly
+          setTimeout(() => finishWinLevel(), 0);
         } else {
           finishLocked();
         }
         return;
       }
 
-
-      
-
       // draw
       ctx.clearRect(0, 0, w, h);
-
       drawParallaxBackground(ctx, w, h, st.t, "forge");
-
 
       // track
       ctx.fillStyle = "rgba(148,163,184,0.10)";
@@ -1448,28 +1632,23 @@ const finishLocked = () => {
         if (it.taken) continue;
         const x = it.x - cam + 140;
         if (x < -120 || x > w + 120) continue;
-      
         const y = laneY(it.lane);
-      
-        // block
+
         ctx.save();
         ctx.shadowColor = it.good ? "rgba(34,197,94,0.55)" : "rgba(239,68,68,0.55)";
         ctx.shadowBlur = 18;
-      
         ctx.fillStyle = it.good ? "#22c55e" : "#ef4444";
         ctx.beginPath();
         ctx.roundRect(x - 34, y - 26, 68, 52, 14);
         ctx.fill();
         ctx.restore();
-      
-        // emoji inside block (bigger)
+
         ctx.fillStyle = "#0b1020";
         ctx.font = `900 ${Math.round(w * 0.022)}px system-ui`;
         ctx.textAlign = "center";
         ctx.fillText(it.emoji, x, y + 10);
-      
-        // ✅ SUPER VISIBLE message pill
-        const label = it.label; // e.g. "UNIQUE", "REUSE!"
+
+        const label = it.label;
         ctx.save();
         ctx.font = `900 ${Math.round(w * 0.016)}px system-ui`;
         const tw = ctx.measureText(label).width;
@@ -1478,27 +1657,24 @@ const finishLocked = () => {
         const pillH = 30;
         const pillX = x - pillW / 2;
         const pillY = y - 64;
-      
-        // pill bg + outline
+
         ctx.shadowColor = "rgba(0,0,0,0.35)";
         ctx.shadowBlur = 10;
         ctx.fillStyle = "rgba(2,6,23,0.85)";
         ctx.beginPath();
         ctx.roundRect(pillX, pillY, pillW, pillH, 14);
         ctx.fill();
-      
+
         ctx.shadowBlur = 0;
         ctx.strokeStyle = it.good ? "rgba(34,197,94,0.55)" : "rgba(239,68,68,0.55)";
         ctx.lineWidth = 2;
         ctx.stroke();
-      
-        // label text
+
         ctx.fillStyle = "#e2e8f0";
         ctx.textAlign = "center";
         ctx.fillText(label, x, pillY + 21);
         ctx.restore();
       }
-
 
       // gate
       const openGate = allCompleteNow();
@@ -1510,23 +1686,14 @@ const finishLocked = () => {
       ctx.textAlign = "left";
       ctx.fillText(openGate ? "OPEN!" : "LOCKED", gateX + 30, h * 0.18);
 
-       // player (PLAYER ICON)
+      // player
       const py = laneY(st.lane);
-
       const HERO_W = 90;
       const HERO_H = 110;
-
-      // player is fixed near left side (same as before)
       const drawX = 140;
 
       if (heroReady && heroRef.current) {
-        ctx.drawImage(
-          heroRef.current,
-          drawX - HERO_W / 2,
-          py - HERO_H / 2,
-          HERO_W,
-          HERO_H
-        );
+        ctx.drawImage(heroRef.current, drawX - HERO_W / 2, py - HERO_H / 2, HERO_W, HERO_H);
       } else {
         ctx.fillStyle = "#60a5fa";
         ctx.beginPath();
@@ -1535,9 +1702,10 @@ const finishLocked = () => {
       }
 
       drawPops(ctx, st.pops, w);
+
       // HUD
       ctx.fillStyle = "rgba(2,6,23,0.60)";
-      ctx.fillRect(18, 18, w - 36, 92);
+      ctx.fillRect(18, 18, w - 36, 100);
 
       ctx.fillStyle = "#e2e8f0";
       ctx.font = `900 ${Math.round(w * 0.02)}px system-ui`;
@@ -1546,24 +1714,20 @@ const finishLocked = () => {
 
       ctx.textAlign = "right";
       ctx.font = `800 ${Math.round(w * 0.016)}px system-ui`;
-      ctx.fillText(`Score: ${score}`, w - 28, 44);
-      ctx.fillText(`Strikes: ${strikes}`, w - 28, 70);
-      ctx.textAlign = "left";
-      ctx.font = `900 ${Math.round(w * 0.016)}px system-ui`;
-      ctx.fillStyle = paused ? "#fbbf24" : "rgba(226,232,240,0.85)";
-      // ctx.fillText(paused ? "⏸ PAUSED (Press ACTION)" : "⭐ ACTION = Pause", 32, 92);
-
+      ctx.fillText(`Level: ${levelRef.current}/${MAX_LEVEL}`, w - 28, 44);
+      ctx.fillText(`Score: ${scoreRef.current}`, w - 28, 70);
+      ctx.fillText(`Strikes: ${strikesRef.current}`, w - 28, 94);
 
       // parts bar
       const partChip = (ok, label, x) => {
         ctx.fillStyle = ok ? "#22c55e" : "rgba(148,163,184,0.25)";
         ctx.beginPath();
-        ctx.roundRect(x, 66, 140, 34, 14);
+        ctx.roundRect(x, 76, 140, 34, 14);
         ctx.fill();
         ctx.fillStyle = ok ? "#0b1020" : "rgba(226,232,240,0.9)";
         ctx.font = `900 ${Math.round(w * 0.013)}px system-ui`;
         ctx.textAlign = "center";
-        ctx.fillText(label, x + 70, 90);
+        ctx.fillText(label, x + 70, 100);
       };
 
       const pr = partsRef.current;
@@ -1572,32 +1736,29 @@ const finishLocked = () => {
       partChip(pr.number, "🔢 NUMBER", 336);
       partChip(pr.unique, "🧬 UNIQUE", 488);
 
-
       raf = requestAnimationFrame(loop);
     };
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [running, w, h, score, parts, strikes, allCompleteNow()]);
+  }, [running, w, h, heroReady, paused]);
 
   const instructions = (
     <>
-      <b>Goal:</b> Build a strong password by collecting all 4 parts: <br />
-      📏 LENGTH, ✨ SYMBOL, 🔢 NUMBER, 🧬 UNIQUE. <br />
-      <b>Avoid:</b> 👾 REUSE traps (same password everywhere). <br />
+      <b>Goal:</b> Collect all 4 parts: 📏 LENGTH, ✨ SYMBOL, 🔢 NUMBER, 🧬 UNIQUE. <br />
+      <b>Avoid:</b> 👾 REUSE traps. <br />
       <b>Controls:</b> ⬆⬇ switch lanes. ⭐ ACTION = Pause/Resume. 🧠 THINK = slow mode. <br />
-      <b>Finish:</b> The gate opens ONLY when all 4 parts are collected.
+      <b>Finish:</b> Gate opens ONLY when all 4 parts are collected.
     </>
   );
-  
 
   return (
     <MissionFrame
       embedded={embedded}
       title="Topic 3 Mini-Game"
-      subtitle="Passwords — Forge a Strong Passphrase"
+      subtitle={`Passwords — ${levelCfg.label}`}
       instructions={instructions}
-      badgeLeft={`🧩 Parts: ${Object.values(parts).filter(Boolean).length}/4`}
+      badgeLeft={`🧭 Level: ${level}/${MAX_LEVEL} | 🧩 Parts: ${Object.values(parts).filter(Boolean).length}/4`}
       badgeRight={`🏆 Score: ${score}`}
       onBack={onBack || (() => window.history.back())}
       theme="ocean"
@@ -1606,49 +1767,57 @@ const finishLocked = () => {
         <div style={ui.canvasShell}>
           <canvas ref={canvasRef} width={w} height={h} style={ui.canvas} />
 
-          {(!running && !done) && (
+          {!running && !done && !betweenLevels && (
             <div style={ui.overlay}>
               <div style={ui.overlayCard}>
                 <div style={ui.overlayTitle}>Forge your password! 🔐</div>
                 <div style={ui.overlayText}>
                   Collect all 4 ingredients to unlock the gate. Avoid “REUSE” monsters!
                 </div>
-                <button style={ui.primaryBtn} onClick={reset}>⚒ Start Forge</button>
+                <button style={ui.primaryBtn} onClick={() => reset(1)}>⚒ Start Level 1</button>
               </div>
             </div>
           )}
+
+          {betweenLevels && (
+            <div style={ui.overlay}>
+              <div style={ui.overlayCard}>
+                <div style={ui.overlayTitle}>Level {levelSummary?.level} Complete! ✅</div>
+                <div style={ui.overlayText}>
+                  Score so far: <b>{levelSummary?.score}</b><br />
+                  Strikes: <b>{levelSummary?.strikes}</b>
+                </div>
+                <button style={ui.primaryBtn} onClick={nextLevel}>➡ Next Level</button>
+              </div>
+            </div>
+          )}
+
           {done && (
             <div style={ui.overlay}>
               <div style={ui.overlayCard}>
                 <div style={ui.overlayTitle}>
                   {result === "win" ? "Forge Complete! 🎉" : "Gate Locked! 🔒"}
                 </div>
-          
+
                 {result === "win" ? (
                   <div style={ui.overlayText}>
-                    You collected all 4 password parts and unlocked the gate!
-                    <br />
-                    Final Score: <b>{score}</b>
+                    You unlocked the gate! Final Score: <b>{score}</b>
                   </div>
                 ) : (
                   <div style={ui.overlayText}>
                     You reached the gate, but your password is missing parts.
                     <br />
-                    Collect all: <b>LENGTH</b>, <b>SYMBOL</b>, <b>NUMBER</b>, <b>UNIQUE</b>
-                    <br />
-                    Then try again!
+                    Collect all 4 parts and try again!
                   </div>
                 )}
 
                 <div style={ui.overlaySmall}>
                   {result === "win"
-                    ? saving
-                      ? "Saving score..."
-                      : "Score saved ✅"
+                    ? (saving ? "Saving score..." : "Score saved ✅")
                     : "Score not saved (incomplete) ❗"}
                 </div>
-                
-                <button style={ui.primaryBtn} onClick={reset}>🔁 Play Again</button>
+
+                <button style={ui.primaryBtn} onClick={() => reset(1)}>🔁 Play Again</button>
               </div>
             </div>
           )}
@@ -1661,9 +1830,10 @@ const finishLocked = () => {
 }
 
 // ============================================================
-// TOPIC 4 — Social Media Privacy Switch Maze (different game)
-// mechanic: maze journey with gates: PUBLIC gate blocks until you toggle switch to PRIVATE.
-// Collect “settings icons”, avoid strangers. Use ACTION on switches.
+// TOPIC 4 — Social Media Privacy Switch Maze (NOW WITH LEVELS)
+// - Level 1 -> Between screen (Next Level) -> Level 2 -> Final save
+// - Level 2 has more strangers + more pickups + extra gate/switch and longer exit distance
+// - Score carries over across levels
 // ============================================================
 export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false }) {
   const containerRef = useRef(null);
@@ -1671,56 +1841,95 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
   const keys = useRef({ left: false, right: false, up: false, down: false, action: false, think: false });
   const { w, h } = useCanvasSize(containerRef, 16 / 9);
 
+  const MAX_LEVEL = 2;
+
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
+
   const [score, setScore] = useState(0);
+  const scoreRef = useRef(0);
+  const setScoreInstant = (v) => {
+    scoreRef.current = v;
+    setScore(v);
+  };
+
   const [privacy, setPrivacy] = useState("public"); // public/private
   const [saving, setSaving] = useState(false);
 
+  const [level, setLevel] = useState(1);
+  const levelRef = useRef(1);
+  const setLevelInstant = (v) => {
+    levelRef.current = v;
+    setLevel(v);
+  };
 
+  // between-level screen
+  const [betweenLevels, setBetweenLevels] = useState(false);
+  const [levelSummary, setLevelSummary] = useState(null); // { level, score, privacy }
+
+  const levelCfg = useMemo(() => {
+    return level === 1
+      ? {
+          label: "Warm-up Maze",
+          exitX: 2600,
+          strangers: 7,
+          pickups: 10,
+          switches: [
+            { x: 700, y: 220, flipped: false },
+            { x: 1500, y: 420, flipped: false },
+            { x: 2100, y: 260, flipped: false },
+          ],
+          gates: [
+            { x: 980, y: 180, w: 28, h: 260, needs: "private" },
+            { x: 1760, y: 330, w: 28, h: 260, needs: "private" },
+          ],
+        }
+      : {
+          label: "Hard Maze",
+          exitX: 3400,
+          strangers: 10,
+          pickups: 14,
+          // extra switch + gate
+          switches: [
+            { x: 700, y: 220, flipped: false },
+            { x: 1500, y: 420, flipped: false },
+            { x: 2100, y: 260, flipped: false },
+            { x: 2850, y: 220, flipped: false },
+          ],
+          gates: [
+            { x: 980, y: 180, w: 28, h: 260, needs: "private" },
+            { x: 1760, y: 330, w: 28, h: 260, needs: "private" },
+            { x: 2560, y: 180, w: 28, h: 260, needs: "private" },
+          ],
+        };
+  }, [level]);
+
+  // world state
   const stRef = useRef({
     t: 0,
     player: { x: 160, y: 220, r: 18 },
     exit: { x: 2600, y: 420, r: 36 },
-    switches: [
-      { x: 700, y: 220, flipped: false },
-      { x: 1500, y: 420, flipped: false },
-      { x: 2100, y: 260, flipped: false },
-    ],
-    gates: [
-      { x: 980, y: 180, w: 28, h: 260, needs: "private" },
-      { x: 1760, y: 330, w: 28, h: 260, needs: "private" },
-    ],
-    strangers: Array.from({ length: 7 }).map((_, i) => ({
-      x: 520 + i * 300 + rand(-40, 40),
-      y: rand(150, 520),
-      r: 18,
-      alive: true,
-      msg: ["DM?", "Follow me!", "Click link!", "Add me!", "Where do you live?"][Math.floor(rand(0, 5))],
-    })),
-    pickups: Array.from({ length: 10 }).map((_, i) => ({
-      x: 360 + i * 230 + rand(-30, 30),
-      y: rand(160, 520),
-      r: 14,
-      taken: false,
-    })),
+    switches: [],
+    gates: [],
+    strangers: [],
+    pickups: [],
     camX: 0,
   });
 
-  
-    // ✅ HERO IMAGE (loads once and works in Vite/React)
-    const heroRef = useRef(null);
-    const [heroReady, setHeroReady] = useState(false);
-  
-    useEffect(() => {
-      const img = new Image();
-      img.src = player;
-      img.onload = () => {
-        heroRef.current = img;
-        setHeroReady(true);
-      };
-    }, []);
+  // ✅ HERO IMAGE (loads once and works in Vite/React)
+  const heroRef = useRef(null);
+  const [heroReady, setHeroReady] = useState(false);
 
+  useEffect(() => {
+    const img = new Image();
+    img.src = player;
+    img.onload = () => {
+      heroRef.current = img;
+      setHeroReady(true);
+    };
+  }, []);
+
+  // keyboard listeners
   useEffect(() => {
     const down = (e) => {
       if (e.key === "ArrowLeft" || e.key === "a") keys.current.left = true;
@@ -1746,30 +1955,116 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
     };
   }, []);
 
-  const reset = () => {
-    stRef.current.player = { x: 160, y: 220, r: 18 };
-    stRef.current.camX = 0;
+  const buildLevelState = (lvl) => {
+    const cfg =
+      lvl === 1
+        ? {
+            exitX: 2600,
+            strangers: 7,
+            pickups: 10,
+            switches: [
+              { x: 700, y: 220, flipped: false },
+              { x: 1500, y: 420, flipped: false },
+              { x: 2100, y: 260, flipped: false },
+            ],
+            gates: [
+              { x: 980, y: 180, w: 28, h: 260, needs: "private" },
+              { x: 1760, y: 330, w: 28, h: 260, needs: "private" },
+            ],
+          }
+        : {
+            exitX: 3400,
+            strangers: 10,
+            pickups: 14,
+            switches: [
+              { x: 700, y: 220, flipped: false },
+              { x: 1500, y: 420, flipped: false },
+              { x: 2100, y: 260, flipped: false },
+              { x: 2850, y: 220, flipped: false },
+            ],
+            gates: [
+              { x: 980, y: 180, w: 28, h: 260, needs: "private" },
+              { x: 1760, y: 330, w: 28, h: 260, needs: "private" },
+              { x: 2560, y: 180, w: 28, h: 260, needs: "private" },
+            ],
+          };
 
-    // reset all items
-    stRef.current.pickups.forEach((p) => (p.taken = false));
-    stRef.current.strangers.forEach((s) => (s.alive = true));
-    stRef.current.switches.forEach((sw) => (sw.flipped = false));
+    stRef.current = {
+      t: 0,
+      player: { x: 160, y: 220, r: 18 },
+      exit: { x: cfg.exitX, y: 420, r: 36 },
+      switches: cfg.switches,
+      gates: cfg.gates,
+      strangers: Array.from({ length: cfg.strangers }).map((_, i) => ({
+        x: 520 + i * 260 + rand(-40, 40),
+        y: rand(150, 520),
+        r: 18,
+        alive: true,
+        msg: ["DM?", "Follow me!", "Click link!", "Add me!", "Where do you live?"][Math.floor(rand(0, 5))],
+      })),
+      pickups: Array.from({ length: cfg.pickups }).map((_, i) => ({
+        x: 360 + i * 220 + rand(-30, 30),
+        y: rand(160, 520),
+        r: 14,
+        taken: false,
+      })),
+      camX: 0,
+    };
+  };
 
-    setScore(0);
-    setPrivacy("public");
+  const reset = (startLevel = 1) => {
+    setBetweenLevels(false);
+    setLevelSummary(null);
     setDone(false);
+
+    setLevelInstant(startLevel);
+
+    // reset score only when starting from level 1
+    if (startLevel === 1) {
+      setScoreInstant(0);
+    }
+
+    setPrivacy("public");
+    buildLevelState(startLevel);
+
     setRunning(true);
   };
 
-  const finish = async () => {
+  const canPassGate = (gate) => privacy === gate.needs;
+
+  const finishFinal = async () => {
     setRunning(false);
+    setBetweenLevels(false);
     setDone(true);
     setSaving(true);
-    await saveScoreToBackend({ userId, gameId, score });
+    await saveScoreToBackend({ userId, gameId, score: scoreRef.current });
     setSaving(false);
   };
 
-  const canPassGate = (gate) => privacy === gate.needs;
+  const finishLevel = async () => {
+    const summary = {
+      level: levelRef.current,
+      score: scoreRef.current,
+      privacy,
+    };
+
+    if (levelRef.current < MAX_LEVEL) {
+      setRunning(false);
+      setDone(false);
+      setLevelSummary(summary);
+      setBetweenLevels(true);
+      return;
+    }
+
+    await finishFinal();
+  };
+
+  const nextLevel = () => {
+    const next = Math.min(MAX_LEVEL, levelRef.current + 1);
+    setBetweenLevels(false);
+    setLevelSummary(null);
+    reset(next);
+  };
 
   useEffect(() => {
     if (!running) return;
@@ -1795,7 +2090,7 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
 
       ny = clamp(ny, 110, h - 120);
 
-      // check gates collision (block if privacy not correct)
+      // gate collision block if privacy not correct
       const tryMove = (tx, ty) => {
         for (const g of st.gates) {
           const gx = g.x;
@@ -1803,7 +2098,6 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
           const gw = g.w;
           const gh = g.h;
 
-          // AABB collision
           const px = tx, py = ty, pr = st.player.r;
           const hit =
             px + pr > gx &&
@@ -1811,9 +2105,7 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
             py + pr > gy &&
             py - pr < gy + gh;
 
-          if (hit && !canPassGate(g)) {
-            return { x: st.player.x, y: st.player.y };
-          }
+          if (hit && !canPassGate(g)) return { x: st.player.x, y: st.player.y };
         }
         return { x: tx, y: ty };
       };
@@ -1830,17 +2122,17 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
         if (p.taken) continue;
         if (dist(st.player.x, st.player.y, p.x, p.y) < st.player.r + p.r + 6) {
           p.taken = true;
-          setScore((s) => s + 80);
+          setScoreInstant(scoreRef.current + 80);
         }
       }
 
-      // strangers: if close while public => penalty, while private => ignore
+      // strangers: penalty while public
       for (const s of st.strangers) {
         if (!s.alive) continue;
         if (dist(st.player.x, st.player.y, s.x, s.y) < 58) {
           if (privacy === "public") {
             s.alive = false;
-            setScore((sc) => Math.max(0, sc - 100));
+            setScoreInstant(Math.max(0, scoreRef.current - 100));
           }
         }
       }
@@ -1851,15 +2143,15 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
           if (!sw.flipped && dist(st.player.x, st.player.y, sw.x, sw.y) < 60) {
             sw.flipped = true;
             setPrivacy("private");
-            setScore((s) => s + 120);
+            setScoreInstant(scoreRef.current + 120);
           }
         }
       }
 
       // win: reach exit
       if (dist(st.player.x, st.player.y, st.exit.x, st.exit.y) < st.exit.r + 22) {
-        setScore((s) => s + 200);
-        finish();
+        setScoreInstant(scoreRef.current + 200);
+        finishLevel();
         return;
       }
 
@@ -1899,6 +2191,7 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
 
         ctx.fillStyle = "#0b1020";
         ctx.font = `900 ${Math.round(w * 0.016)}px system-ui`;
+        ctx.textAlign = "center";
         ctx.fillText(sw.flipped ? "PRIVATE" : "SWITCH", x, sw.y + 6);
       }
 
@@ -1926,6 +2219,7 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
         ctx.fill();
         ctx.fillStyle = "#0b1020";
         ctx.font = `900 ${Math.round(w * 0.016)}px system-ui`;
+        ctx.textAlign = "center";
         ctx.fillText("👤", x, s2.y + 6);
 
         ctx.fillStyle = "rgba(226,232,240,0.95)";
@@ -1941,28 +2235,22 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
       ctx.fill();
       ctx.fillStyle = "#0b1020";
       ctx.font = `900 ${Math.round(w * 0.018)}px system-ui`;
+      ctx.textAlign = "center";
       ctx.fillText("🏁", ex, st.exit.y + 8);
 
+      // player icon
       const px = st.player.x - cam;
-
       const HERO_W = 90;
       const HERO_H = 110;
 
       if (heroReady && heroRef.current) {
-        ctx.drawImage(
-          heroRef.current,
-          px - HERO_W / 2,
-          st.player.y - HERO_H / 2,
-          HERO_W,
-          HERO_H
-        );
+        ctx.drawImage(heroRef.current, px - HERO_W / 2, st.player.y - HERO_H / 2, HERO_W, HERO_H);
       } else {
         ctx.fillStyle = "#60a5fa";
         ctx.beginPath();
         ctx.roundRect(px - 18, st.player.y - 22, 36, 44, 12);
         ctx.fill();
       }
-
 
       // privacy badge above player
       ctx.fillStyle = privacy === "private" ? "rgba(34,197,94,0.9)" : "rgba(245,158,11,0.9)";
@@ -1971,11 +2259,12 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
       ctx.fill();
       ctx.fillStyle = "#0b1020";
       ctx.font = `900 ${Math.round(w * 0.013)}px system-ui`;
+      ctx.textAlign = "center";
       ctx.fillText(privacy.toUpperCase(), px, st.player.y - 42);
 
       // HUD
       ctx.fillStyle = "rgba(2,6,23,0.60)";
-      ctx.fillRect(18, 18, w - 36, 72);
+      ctx.fillRect(18, 18, w - 36, 78);
 
       ctx.fillStyle = "#e2e8f0";
       ctx.font = `900 ${Math.round(w * 0.02)}px system-ui`;
@@ -1984,15 +2273,15 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
 
       ctx.textAlign = "right";
       ctx.font = `800 ${Math.round(w * 0.016)}px system-ui`;
-      ctx.fillText(`Score: ${score}`, w - 28, 44);
-      ctx.fillText(`Mode: ${privacy}`, w - 28, 68);
+      ctx.fillText(`Level: ${levelRef.current}/${MAX_LEVEL}`, w - 28, 44);
+      ctx.fillText(`Score: ${scoreRef.current}`, w - 28, 68);
 
       raf = requestAnimationFrame(loop);
     };
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [running, w, h, score, privacy]);
+  }, [running, w, h, privacy, heroReady]);
 
   const instructions = (
     <>
@@ -2002,14 +2291,14 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
       <b>Tip:</b> Go PRIVATE early to stay safe and pass 🔒 gates.
     </>
   );
-  
+
   return (
     <MissionFrame
       embedded={embedded}
       title="Topic 4 Mini-Game"
-      subtitle="Social Media Safety — Privacy Switch Maze"
+      subtitle={`Social Media Safety — ${levelCfg.label}`}
       instructions={instructions}
-      badgeLeft={`🔐 Mode: ${privacy}`}
+      badgeLeft={`🧭 Level: ${level}/${MAX_LEVEL} | 🔐 ${privacy.toUpperCase()}`}
       badgeRight={`🏆 Score: ${score}`}
       onBack={onBack || (() => window.history.back())}
       theme="ocean"
@@ -2018,25 +2307,46 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
         <div style={ui.canvasShell}>
           <canvas ref={canvasRef} width={w} height={h} style={ui.canvas} />
 
-          {(!running && !done) && (
+          {/* Start overlay */}
+          {!running && !done && !betweenLevels && (
             <div style={ui.overlay}>
               <div style={ui.overlayCard}>
                 <div style={ui.overlayTitle}>Set your privacy! 🔒</div>
                 <div style={ui.overlayText}>
                   Find switches to turn PRIVATE and unlock gates. Avoid strangers when PUBLIC.
+                  <br />
+                  <b>2 Levels:</b> Level 2 is harder!
                 </div>
-                <button style={ui.primaryBtn} onClick={reset}>🧩 Start Maze</button>
+                <button style={ui.primaryBtn} onClick={() => reset(1)}>🧩 Start Level 1</button>
               </div>
             </div>
           )}
 
+          {/* Between levels */}
+          {betweenLevels && (
+            <div style={ui.overlay}>
+              <div style={ui.overlayCard}>
+                <div style={ui.overlayTitle}>Level {levelSummary?.level} Complete! ✅</div>
+                <div style={ui.overlayText}>
+                  Score so far: <b>{levelSummary?.score}</b>
+                  <br />
+                  Mode: <b>{(levelSummary?.privacy || "public").toUpperCase()}</b>
+                </div>
+                <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+                  <button style={ui.primaryBtn} onClick={nextLevel}>➡ Next Level</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Final done */}
           {done && (
             <div style={ui.overlay}>
               <div style={ui.overlayCard}>
                 <div style={ui.overlayTitle}>Great job! 🎉</div>
                 <div style={ui.overlayText}>Final Score: <b>{score}</b></div>
                 <div style={ui.overlaySmall}>{saving ? "Saving score..." : "Score saved ✅"}</div>
-                <button style={ui.primaryBtn} onClick={reset}>🔁 Play Again</button>
+                <button style={ui.primaryBtn} onClick={() => reset(1)}>🔁 Play Again</button>
               </div>
             </div>
           )}
