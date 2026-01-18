@@ -1,86 +1,282 @@
-.admin-page {
-    min-height: 100vh;
-    padding: 24px;
-    color: #e2e8f0;
-    background: radial-gradient(900px 500px at 20% 10%, rgba(98,174,218,0.18), transparent 60%),
-                radial-gradient(900px 600px at 80% 20%, rgba(34,197,94,0.12), transparent 55%),
-                linear-gradient(180deg, #050a12, #070f1b);
-    font-family: system-ui, -apple-system, Segoe UI, Roboto;
+/* ============================================================
+   ADMIN DASHBOARD — BEAUTIFUL / ENGAGING GLASS UI (NO JSX CHANGES)
+   Drop-in replacement for AdminDashboard.css
+   ============================================================ */
+
+   :root {
+    --bg0: #040812;
+    --bg1: #061022;
+  
+    --glass: rgba(10, 18, 36, 0.58);
+    --glass2: rgba(10, 18, 36, 0.42);
+  
+    --stroke: rgba(226, 232, 240, 0.12);
+    --stroke2: rgba(226, 232, 240, 0.18);
+  
+    --text: #e2e8f0;
+    --muted: rgba(226, 232, 240, 0.78);
+  
+    --aqua: #62aeda;
+    --mint: #22c55e;
+    --violet: #8b5cf6;
+    --amber: #f59e0b;
+    --red: #ef4444;
+  
+    --shadow: 0 20px 55px rgba(0, 0, 0, 0.45);
+    --shadow2: 0 10px 26px rgba(0, 0, 0, 0.30);
+  
+    --r18: 18px;
+    --r14: 14px;
   }
   
+  /* ----------------------------
+     PAGE + animated aurora glow
+  ----------------------------- */
+  .admin-page {
+    min-height: 100vh;
+    padding: 26px;
+    color: var(--text);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto;
+    position: relative;
+    overflow: hidden;
+  
+    background:
+      radial-gradient(1200px 620px at 15% 10%, rgba(98,174,218,0.22), transparent 60%),
+      radial-gradient(980px 680px at 85% 18%, rgba(34,197,94,0.18), transparent 55%),
+      radial-gradient(980px 680px at 60% 90%, rgba(139,92,246,0.10), transparent 55%),
+      linear-gradient(180deg, var(--bg0), var(--bg1));
+  }
+  
+  .admin-page::before,
+  .admin-page::after {
+    content: "";
+    position: absolute;
+    inset: -180px;
+    pointer-events: none;
+    filter: blur(44px);
+    opacity: 0.70;
+    transform: translate3d(0,0,0);
+    animation: aurora 14s ease-in-out infinite alternate;
+  }
+  
+  .admin-page::before {
+    background:
+      radial-gradient(circle at 20% 20%, rgba(98,174,218,0.22), transparent 55%),
+      radial-gradient(circle at 70% 25%, rgba(34,197,94,0.18), transparent 58%),
+      radial-gradient(circle at 55% 85%, rgba(139,92,246,0.14), transparent 58%);
+  }
+  
+  .admin-page::after {
+    opacity: 0.55;
+    animation-duration: 18s;
+    background:
+      radial-gradient(circle at 80% 10%, rgba(245,158,11,0.10), transparent 55%),
+      radial-gradient(circle at 20% 80%, rgba(34,197,94,0.10), transparent 55%);
+  }
+  
+  @keyframes aurora {
+    from { transform: translate3d(-18px, -14px, 0) scale(1.02); }
+    to   { transform: translate3d(18px, 14px, 0) scale(1.06); }
+  }
+  
+  /* Reduce motion if user prefers */
+  @media (prefers-reduced-motion: reduce) {
+    .admin-page::before,
+    .admin-page::after { animation: none; }
+  }
+  
+  /* Keep content above glow layers */
+  .admin-header,
+  .admin-cards,
+  .admin-grid,
+  .admin-panel {
+    position: relative;
+    z-index: 2;
+  }
+  
+  /* ----------------------------
+     HEADER
+  ----------------------------- */
   .admin-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 14px;
     margin-bottom: 18px;
   }
   
   .admin-title {
-    font-size: 26px;
-    font-weight: 900;
+    font-size: 30px;
+    font-weight: 950;
     margin: 0;
+    letter-spacing: 0.25px;
+    text-shadow: 0 10px 40px rgba(0,0,0,0.55);
   }
   
   .admin-subtitle {
     margin: 6px 0 0;
-    opacity: 0.85;
+    color: var(--muted);
   }
   
-  .admin-refresh {
-    border: 1px solid rgba(148,163,184,0.28);
-    background: rgba(2,6,23,0.55);
-    color: #e2e8f0;
+  /* Back button (your JSX uses .admin-back) */
+  .admin-back {
+    border: 1px solid var(--stroke2);
+    background: rgba(2, 6, 23, 0.55);
+    color: var(--text);
     border-radius: 14px;
     padding: 10px 14px;
-    font-weight: 800;
+    font-weight: 950;
     cursor: pointer;
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow2);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
   }
   
+  .admin-back:hover {
+    transform: translateY(-1px);
+    border-color: rgba(226,232,240,0.25);
+    box-shadow: var(--shadow);
+  }
+  
+  /* Refresh button */
+  .admin-refresh {
+    border: 1px solid var(--stroke2);
+    background: rgba(2, 6, 23, 0.55);
+    color: var(--text);
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-weight: 950;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow2);
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .admin-refresh:hover {
+    transform: translateY(-1px);
+    border-color: rgba(226,232,240,0.25);
+    box-shadow: var(--shadow);
+  }
+  
+  .admin-refresh::after {
+    content: "";
+    position: absolute;
+    inset: -60%;
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.40), transparent 45%);
+    transform: translateX(-35%) rotate(10deg);
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  
+  .admin-refresh:hover::after {
+    opacity: 0.55;
+    transform: translateX(0%) rotate(10deg);
+  }
+  
+  /* ----------------------------
+     CARDS (stats)
+  ----------------------------- */
   .admin-cards {
     display: grid;
-    grid-template-columns: repeat(4, minmax(160px, 1fr)); /* ✅ from 3 to 4 */
+    grid-template-columns: repeat(4, minmax(160px, 1fr));
     gap: 12px;
     margin-bottom: 18px;
   }
   
   .admin-card {
-    border: 1px solid rgba(148,163,184,0.22);
-    background: rgba(2,6,23,0.55);
-    border-radius: 18px;
+    border: 1px solid var(--stroke);
+    background: linear-gradient(180deg, rgba(10,18,36,0.62), rgba(10,18,36,0.46));
+    border-radius: var(--r18);
     padding: 14px;
+    box-shadow: var(--shadow2);
+    backdrop-filter: blur(14px);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  }
+  
+  .admin-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 25% 15%, rgba(98,174,218,0.22), transparent 55%),
+      radial-gradient(circle at 85% 10%, rgba(34,197,94,0.16), transparent 55%);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  
+  .admin-card::after {
+    content: "";
+    position: absolute;
+    inset: -30%;
+    background: radial-gradient(circle at 35% 25%, rgba(255,255,255,0.30), transparent 45%);
+    transform: translateX(-35%) rotate(8deg);
+    opacity: 0;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    pointer-events: none;
+  }
+  
+  .admin-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(226,232,240,0.22);
+    box-shadow: var(--shadow);
+  }
+  
+  .admin-card:hover::after {
+    opacity: 0.55;
+    transform: translateX(0%) rotate(8deg);
   }
   
   .admin-card-label {
-    opacity: 0.8;
-    font-weight: 700;
-    font-size: 13px;
+    opacity: 0.85;
+    font-weight: 850;
+    font-size: 12px;
+    letter-spacing: 0.35px;
+    position: relative;
+    z-index: 1;
   }
   
   .admin-card-value {
-    font-size: 26px;
-    font-weight: 900;
+    font-size: 30px;
+    font-weight: 950;
     margin-top: 8px;
+    position: relative;
+    z-index: 1;
   }
   
+  /* ----------------------------
+     GRID layout
+  ----------------------------- */
   .admin-grid {
     display: grid;
     grid-template-columns: 1.1fr 0.9fr;
     gap: 14px;
   }
   
+  /* ----------------------------
+     PANELS
+  ----------------------------- */
   .admin-panel {
-    border: 1px solid rgba(148,163,184,0.22);
-    background: rgba(2,6,23,0.55);
-    border-radius: 18px;
+    border: 1px solid var(--stroke);
+    background: linear-gradient(180deg, rgba(10,18,36,0.62), rgba(10,18,36,0.44));
+    border-radius: var(--r18);
     padding: 14px;
+    box-shadow: var(--shadow2);
+    backdrop-filter: blur(14px);
   }
   
   .admin-panel-title {
     margin: 0 0 12px;
-    font-weight: 900;
+    font-weight: 950;
+    letter-spacing: 0.25px;
   }
   
+  /* ----------------------------
+     TABLE
+  ----------------------------- */
   .admin-table {
     width: 100%;
     display: grid;
@@ -89,54 +285,140 @@
   
   .admin-row {
     display: grid;
-    grid-template-columns: 0.4fr 0.9fr 1.3fr 0.6fr 0.7fr 0.9fr; /* ✅ 6 columns */
+    grid-template-columns: 0.4fr 0.9fr 1.3fr 0.6fr 0.7fr 0.9fr;
     gap: 10px;
-    padding: 10px;
-    border-radius: 14px;
-    border: 1px solid rgba(148,163,184,0.16);
-    background: rgba(2,6,23,0.35);
+    padding: 11px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(226,232,240,0.10);
+    background: rgba(2, 6, 23, 0.28);
     align-items: center;
+    transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .admin-row::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(98,174,218,0.10), transparent 35%, rgba(34,197,94,0.08));
+    opacity: 0;
+    transition: opacity 0.14s ease;
+    pointer-events: none;
+  }
+  
+  .admin-row:hover {
+    transform: translateY(-1px);
+    border-color: rgba(226,232,240,0.18);
+    background: rgba(2, 6, 23, 0.35);
+    box-shadow: 0 16px 34px rgba(0,0,0,0.22);
+  }
+  
+  .admin-row:hover::before {
+    opacity: 1;
   }
   
   .admin-head {
-    font-weight: 900;
-    background: rgba(2,6,23,0.55);
+    font-weight: 950;
+    background: rgba(2, 6, 23, 0.54);
+    border-color: rgba(226,232,240,0.14);
   }
   
   .admin-email {
-    opacity: 0.9;
+    opacity: 0.92;
     font-size: 13px;
+    color: rgba(226,232,240,0.84);
+    word-break: break-word;
   }
   
+  /* ----------------------------
+     ACTION BUTTONS (View Progress / Block / Unblock)
+  ----------------------------- */
   .admin-btn {
     border: none;
     border-radius: 999px;
-    padding: 8px 12px;
+    padding: 9px 14px;
     cursor: pointer;
-    font-weight: 900;
+    font-weight: 950;
     color: #04111c;
-    background: linear-gradient(135deg, #62aeda, #22c55e);
+    background: linear-gradient(135deg, var(--aqua), var(--mint));
+    box-shadow: 0 14px 28px rgba(34,197,94,0.13), 0 12px 22px rgba(98,174,218,0.10);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
   }
   
+  .admin-btn::after {
+    content: "";
+    position: absolute;
+    inset: -50%;
+    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.55), transparent 48%);
+    transform: translateX(-35%) rotate(10deg);
+    opacity: 0;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  
+  .admin-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 38px rgba(34,197,94,0.16), 0 14px 26px rgba(98,174,218,0.12);
+  }
+  
+  .admin-btn:hover::after {
+    opacity: 0.65;
+    transform: translateX(0%) rotate(10deg);
+  }
+  
+  .admin-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  /* ----------------------------
+     SEARCH INPUT + SELECT (your JSX uses inline styles,
+     but these still improve the look)
+  ----------------------------- */
+  .admin-panel input,
+  .admin-panel select {
+    background: rgba(226,232,240,0.95);
+    color: #0b1020;
+    border: 1px solid rgba(0,0,0,0.12) !important;
+    border-radius: 12px !important;
+    outline: none;
+    box-shadow: 0 12px 22px rgba(0,0,0,0.14);
+  }
+  
+  .admin-panel input:focus,
+  .admin-panel select:focus {
+    border-color: rgba(98,174,218,0.55) !important;
+    box-shadow:
+      0 0 0 4px rgba(98,174,218,0.18),
+      0 12px 22px rgba(0,0,0,0.14);
+  }
+  
+  /* ----------------------------
+     PROGRESS PANEL
+  ----------------------------- */
   .progress-box {
     display: grid;
     gap: 12px;
   }
   
   .progress-user {
-    padding: 10px;
-    border-radius: 14px;
-    background: rgba(2,6,23,0.35);
-    border: 1px solid rgba(148,163,184,0.16);
+    padding: 12px;
+    border-radius: 16px;
+    background: rgba(2, 6, 23, 0.30);
+    border: 1px solid rgba(226,232,240,0.10);
   }
   
   .progress-name {
-    font-weight: 900;
+    font-weight: 950;
     font-size: 16px;
   }
   
   .progress-id {
-    opacity: 0.8;
+    opacity: 0.82;
     font-size: 12px;
   }
   
@@ -148,40 +430,57 @@
   }
   
   .progress-label {
-    font-weight: 800;
+    font-weight: 900;
     font-size: 13px;
-    opacity: 0.9;
+    opacity: 0.92;
   }
   
   .progress-bar {
     height: 12px;
     border-radius: 999px;
-    background: rgba(148,163,184,0.18);
+    background: rgba(226,232,240,0.12);
     overflow: hidden;
+    border: 1px solid rgba(226,232,240,0.08);
   }
   
   .progress-fill {
     height: 100%;
-    background: linear-gradient(135deg, #62aeda, #22c55e);
     width: 0;
+    background: linear-gradient(135deg, var(--aqua), var(--mint));
+    transition: width 0.35s ease;
   }
   
   .progress-score {
     text-align: right;
-    font-weight: 900;
+    font-weight: 950;
   }
   
+  /* ----------------------------
+     RESPONSIVE
+  ----------------------------- */
   @media (max-width: 980px) {
-    .admin-grid {
+    .admin-header {
       grid-template-columns: 1fr;
+      justify-items: start;
     }
+  
     .admin-cards {
       grid-template-columns: repeat(2, minmax(160px, 1fr));
     }
-  }
   
-  @media (max-width: 520px) {
-    .admin-cards {
+    .admin-grid {
       grid-template-columns: 1fr;
     }
+  
+    .admin-row {
+      grid-template-columns: 0.5fr 1fr 1.2fr;
+      grid-auto-rows: auto;
+    }
   }
+  
+  @media (max-width: 560px) {
+    .admin-page { padding: 16px; }
+    .admin-cards { grid-template-columns: 1fr; }
+    .admin-title { font-size: 24px; }
+  }
+  

@@ -398,8 +398,8 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
 
   const levelCfg = useMemo(() => {
     return level === 1
-      ? { finishX: 4200, baseSpeed: 3.2, badChance: 0.30, label: "Warm-up Run" }
-      : { finishX: 5600, baseSpeed: 5.4, badChance: 0.42, label: "Speed Run" };
+      ? { finishX: 4200, baseSpeed: 0.9, badChance: 0.30, label: "Warm-up Run" }
+      : { finishX: 5600, baseSpeed: 3.4, badChance: 0.42, label: "Speed Run" };
   }, [level]);
 
   // world state
