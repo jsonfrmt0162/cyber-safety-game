@@ -1696,7 +1696,7 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
       y: rand(150, 520),
       r: 18,
       alive: true,
-      msg: ["DM?", "Follow me!", "Click link!", "Add me!", "Where u live?"][Math.floor(rand(0, 5))],
+      msg: ["DM?", "Follow me!", "Click link!", "Add me!", "Where do you live?"][Math.floor(rand(0, 5))],
     })),
     pickups: Array.from({ length: 10 }).map((_, i) => ({
       x: 360 + i * 230 + rand(-30, 30),
