@@ -1,315 +1,387 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { api } from "../services/api"; // your axios instance
+import { api } from "../services/api";
+import "../styles/AdminDashboard.css";
+import { useNavigate } from "react-router-dom";
+
+const TOPIC_LABELS = {
+  1: "Topic 1 (Digital Footprint)",
+  2: "Topic 2 (Personal Info)",
+  3: "Topic 3 (Passwords)",
+  4: "Topic 4 (Social Media)",
+};
 
 export default function AdminDashboard() {
-  const [tab, setTab] = useState("users"); // users | suspicious | reports
+  const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
-  const [suspicious, setSuspicious] = useState([]);
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [suspiciousUsers, setSuspiciousUsers] = useState([]);
 
-  const token = localStorage.getItem("token");
-  const isAdmin = localStorage.getItem("is_admin") === "true";
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [progress, setProgress] = useState(null);
 
-  useEffect(() => {
-    if (!isAdmin) setMsg("❌ Admin access required.");
-  }, [isAdmin]);
+  const [loading, setLoading] = useState(true);
+  const [busyUserId, setBusyUserId] = useState(null);
 
-  const headers = useMemo(
-    () => ({ Authorization: `Bearer ${token}` }),
-    [token]
-  );
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("all"); // all | blocked | suspicious | players | admins
 
-  const loadUsers = async () => {
+  const navigate = useNavigate();
+
+  const fetchAll = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/admin/users", { headers });
-      setUsers(res.data);
-    } catch (e) {
-      setMsg(e?.response?.data?.detail || "Failed to load users");
+      const [statsRes, usersRes, suspiciousRes] = await Promise.all([
+        api.get("/admin/stats"),
+        api.get("/admin/users"),
+        api.get("/admin/users/suspicious").catch(() => ({ data: [] })), // if route not yet deployed, don't crash
+      ]);
+
+      setStats(statsRes.data);
+      setUsers(usersRes.data);
+      setSuspiciousUsers(suspiciousRes.data || []);
     } finally {
       setLoading(false);
     }
   };
 
-  const loadSuspicious = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get("/admin/users/suspicious", { headers });
-      setSuspicious(res.data);
-    } catch (e) {
-      setMsg(e?.response?.data?.detail || "Failed to load suspicious users");
-    } finally {
-      setLoading(false);
-    }
+  const fetchProgress = async (user) => {
+    setSelectedUser(user);
+    setProgress(null);
+    const res = await api.get(`/admin/users/${user.id}/progress`);
+    setProgress(res.data);
   };
 
-  const loadSummary = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get("/admin/report/summary", { headers });
-      setSummary(res.data);
-    } catch (e) {
-      setMsg(e?.response?.data?.detail || "Failed to load report");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    setMsg("");
-    if (tab === "users") loadUsers();
-    if (tab === "suspicious") loadSuspicious();
-    if (tab === "reports") loadSummary();
-    // eslint-disable-next-line
-  }, [tab, isAdmin]);
-
-  const blockUser = async (userId) => {
-    const reason = prompt("Reason for blocking?", "Suspicious activity");
-    if (!reason) return;
-
-    setLoading(true);
-    try {
-      await api.post(`/admin/users/${userId}/block`, { reason }, { headers });
-      setMsg("✅ User blocked");
-      tab === "users" ? loadUsers() : loadSuspicious();
-    } catch (e) {
-      setMsg(e?.response?.data?.detail || "Failed to block user");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const unblockUser = async (userId) => {
-    setLoading(true);
-    try {
-      await api.post(`/admin/users/${userId}/unblock`, {}, { headers });
-      setMsg("✅ User unblocked");
-      tab === "users" ? loadUsers() : loadSuspicious();
-    } catch (e) {
-      setMsg(e?.response?.data?.detail || "Failed to unblock user");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isAdmin) {
-    return (
-      <div style={styles.page}>
-        <h1 style={styles.h1}>Admin Dashboard</h1>
-        <p style={styles.error}>{msg}</p>
-      </div>
+  const blockUser = async (user) => {
+    const reason = window.prompt(
+      `Block ${user.username}?\n\nEnter reason (optional):`,
+      "Suspicious activity"
     );
-  }
+
+    // If admin pressed Cancel, do nothing
+    if (reason === null) return;
+
+    setBusyUserId(user.id);
+    try {
+      await api.post(`/admin/users/${user.id}/block`, { reason });
+      await fetchAll();
+
+      // refresh selected user view
+      if (selectedUser?.id === user.id) {
+        const updated = (prev) =>
+          prev ? { ...prev, is_blocked: true, blocked_reason: reason } : prev;
+        setSelectedUser(updated);
+      }
+    } catch (e) {
+      alert(e?.response?.data?.detail || "Failed to block user");
+    } finally {
+      setBusyUserId(null);
+    }
+  };
+
+  const unblockUser = async (user) => {
+    const ok = window.confirm(`Unblock ${user.username}?`);
+    if (!ok) return;
+
+    setBusyUserId(user.id);
+    try {
+      await api.post(`/admin/users/${user.id}/unblock`);
+      await fetchAll();
+
+      if (selectedUser?.id === user.id) {
+        setSelectedUser((prev) =>
+          prev ? { ...prev, is_blocked: false, blocked_reason: null } : prev
+        );
+      }
+    } catch (e) {
+      alert(e?.response?.data?.detail || "Failed to unblock user");
+    } finally {
+      setBusyUserId(null);
+    }
+  };
+
+  useEffect(() => {
+    fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const suspiciousIds = useMemo(() => {
+    return new Set((suspiciousUsers || []).map((u) => u.id));
+  }, [suspiciousUsers]);
+
+  const filteredUsers = useMemo(() => {
+    const q = query.trim().toLowerCase();
+
+    return (users || [])
+      .filter((u) => {
+        if (!q) return true;
+        return (
+          String(u.id).includes(q) ||
+          (u.username || "").toLowerCase().includes(q) ||
+          (u.email || "").toLowerCase().includes(q)
+        );
+      })
+      .filter((u) => {
+        if (filter === "all") return true;
+        if (filter === "blocked") return !!u.is_blocked;
+        if (filter === "suspicious") return suspiciousIds.has(u.id) || !!u.suspicious;
+        if (filter === "players") return !u.is_admin;
+        if (filter === "admins") return !!u.is_admin;
+        return true;
+      });
+  }, [users, query, filter, suspiciousIds]);
+
+  if (loading) return <div className="admin-page">Loading admin dashboard...</div>;
 
   return (
-    <div style={styles.page}>
-      <div style={styles.top}>
-        <h1 style={styles.h1}>🛠 Admin Dashboard</h1>
-        <div style={styles.tabs}>
-          <button style={tabBtn(tab === "users")} onClick={() => setTab("users")}>
-            Users
-          </button>
-          <button
-            style={tabBtn(tab === "suspicious")}
-            onClick={() => setTab("suspicious")}
-          >
-            Suspicious
-          </button>
-          <button
-            style={tabBtn(tab === "reports")}
-            remember
-            onClick={() => setTab("reports")}
-          >
-            Reports
-          </button>
-        </div>
-      </div>
+    <div className="admin-page">
+      <header className="admin-header">
+        <button className="admin-back" onClick={() => navigate("/dashboard")}>
+          ⬅ Back
+        </button>
 
-      {msg && <div style={styles.toast}>{msg}</div>}
-      {loading && <div style={styles.loading}>Loading…</div>}
-
-      {tab === "users" && (
-        <div style={styles.card}>
-          <h2 style={styles.h2}>All Users</h2>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Blocked</th>
-                <th>Failed Logins</th>
-                <th>Last IP</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.id}</td>
-                  <td>{u.username}</td>
-                  <td>{u.email}</td>
-                  <td>{u.is_blocked ? "✅ Yes" : "No"}</td>
-                  <td>{u.failed_login_attempts}</td>
-                  <td>{u.last_login_ip || "-"}</td>
-                  <td>
-                    {u.is_blocked ? (
-                      <button style={styles.btnOk} onClick={() => unblockUser(u.id)}>
-                        Unblock
-                      </button>
-                    ) : (
-                      <button style={styles.btnBad} onClick={() => blockUser(u.id)}>
-                        Block
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {tab === "suspicious" && (
-        <div style={styles.card}>
-          <h2 style={styles.h2}>Suspicious Users</h2>
-          <p style={styles.small}>
-            Rule: failed logins ≥ 5 (you can change the rules in backend).
+        <div>
+          <h1 className="admin-title">🛠 Admin Dashboard</h1>
+          <p className="admin-subtitle">
+            Monitor players, scores, topic progress, and suspicious activity.
           </p>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Failed Logins</th>
-                <th>Last IP</th>
-                <th>Blocked</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {suspicious.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.id}</td>
-                  <td>{u.username}</td>
-                  <td>{u.failed_login_attempts}</td>
-                  <td>{u.last_login_ip || "-"}</td>
-                  <td>{u.is_blocked ? "✅ Yes" : "No"}</td>
-                  <td>
-                    {u.is_blocked ? (
-                      <button style={styles.btnOk} onClick={() => unblockUser(u.id)}>
-                        Unblock
-                      </button>
-                    ) : (
-                      <button style={styles.btnBad} onClick={() => blockUser(u.id)}>
-                        Block Now
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {suspicious.length === 0 && (
-                <tr>
-                  <td colSpan="6" style={styles.small}>No suspicious users 🎉</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        </div>
+
+        <button className="admin-refresh" onClick={fetchAll}>
+          🔄 Refresh
+        </button>
+      </header>
+
+      {stats && (
+        <div className="admin-cards">
+          <div className="admin-card">
+            <div className="admin-card-label">Total Users</div>
+            <div className="admin-card-value">{stats.total_users}</div>
+          </div>
+
+          <div className="admin-card">
+            <div className="admin-card-label">Total Scores Saved</div>
+            <div className="admin-card-value">{stats.total_scores}</div>
+          </div>
+
+          <div className="admin-card">
+            <div className="admin-card-label">Players With Scores</div>
+            <div className="admin-card-value">{stats.top_players}</div>
+          </div>
+
+          {"total_blocked" in stats && (
+            <div className="admin-card">
+              <div className="admin-card-label">Blocked Users</div>
+              <div className="admin-card-value">{stats.total_blocked}</div>
+            </div>
+          )}
         </div>
       )}
 
-      {tab === "reports" && (
-        <div style={styles.card}>
-          <h2 style={styles.h2}>Reports</h2>
-          {!summary ? (
-            <p style={styles.small}>No data loaded.</p>
-          ) : (
-            <div style={styles.grid}>
-              <div style={styles.stat}>👥 Total Users: <b>{summary.total_users}</b></div>
-              <div style={styles.stat}>⛔ Blocked: <b>{summary.total_blocked}</b></div>
-              <div style={styles.stat}>🚩 Suspicious: <b>{summary.total_suspicious}</b></div>
+      {/* Optional: suspicious panel */}
+      {suspiciousUsers?.length > 0 && (
+        <div className="admin-panel" style={{ marginTop: 16 }}>
+          <h2 className="admin-panel-title">🚩 Suspicious Users</h2>
+          <p style={{ opacity: 0.85, marginTop: -6 }}>
+            These users matched your suspicion rules (e.g., many failed logins).
+          </p>
 
-              <div style={{ ...styles.stat, gridColumn: "1 / -1" }}>
-                <b>Top Scores</b>
-                <ul>
-                  {summary.top_scores.map((s, i) => (
-                    <li key={i}>
-                      User {s.user_id} • Game {s.game_id} • Score {s.score}
-                    </li>
-                  ))}
-                </ul>
+          <div className="admin-table">
+            <div className="admin-row admin-head">
+              <div>ID</div>
+              <div>Username</div>
+              <div>Email</div>
+              <div>Failed Attempts</div>
+              <div>Action</div>
+            </div>
+
+            {suspiciousUsers.map((u) => (
+              <div key={u.id} className="admin-row">
+                <div>{u.id}</div>
+                <div>
+                  {u.username}{" "}
+                  <span style={{ marginLeft: 8, fontWeight: 800 }}>🚩</span>
+                </div>
+                <div className="admin-email">{u.email}</div>
+                <div>{u.failed_login_attempts ?? 0}</div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button className="admin-btn" onClick={() => fetchProgress(u)}>
+                    View Progress
+                  </button>
+
+                  {!u.is_blocked ? (
+                    <button
+                      className="admin-btn"
+                      disabled={busyUserId === u.id}
+                      onClick={() => blockUser(u)}
+                    >
+                      {busyUserId === u.id ? "Blocking..." : "⛔ Block"}
+                    </button>
+                  ) : (
+                    <button
+                      className="admin-btn"
+                      disabled={busyUserId === u.id}
+                      onClick={() => unblockUser(u)}
+                    >
+                      {busyUserId === u.id ? "Unblocking..." : "✅ Unblock"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="admin-grid">
+        <section className="admin-panel">
+          <h2 className="admin-panel-title">👥 Users</h2>
+
+          {/* Filters */}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search id / username / email..."
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid rgba(0,0,0,0.15)",
+                minWidth: 240,
+                flex: 1,
+              }}
+            />
+
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid rgba(0,0,0,0.15)",
+                fontWeight: 700,
+              }}
+            >
+              <option value="all">All</option>
+              <option value="players">Players</option>
+              <option value="admins">Admins</option>
+              <option value="blocked">Blocked</option>
+              <option value="suspicious">Suspicious</option>
+            </select>
+          </div>
+
+          <div className="admin-table">
+            <div className="admin-row admin-head">
+              <div>ID</div>
+              <div>Username</div>
+              <div>Email</div>
+              <div>Role</div>
+              <div>Status</div>
+              <div>Action</div>
+            </div>
+
+            {filteredUsers.map((u) => {
+              const isSusp = suspiciousIds.has(u.id) || !!u.suspicious;
+              return (
+                <div key={u.id} className="admin-row">
+                  <div>{u.id}</div>
+
+                  <div style={{ fontWeight: 800 }}>
+                    {u.username}
+                    {isSusp && <span style={{ marginLeft: 8 }}>🚩</span>}
+                    {u.is_blocked && <span style={{ marginLeft: 8 }}>⛔</span>}
+                  </div>
+
+                  <div className="admin-email">{u.email}</div>
+                  <div>{u.is_admin ? "Admin" : "Player"}</div>
+
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {u.is_blocked ? (
+                      <span style={{ fontWeight: 900 }}>Blocked</span>
+                    ) : (
+                      <span style={{ fontWeight: 900 }}>Active</span>
+                    )}
+                    {isSusp && <span style={{ fontWeight: 900 }}>Suspicious</span>}
+                  </div>
+
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button className="admin-btn" onClick={() => fetchProgress(u)}>
+                      View Progress
+                    </button>
+
+                    {!u.is_admin && !u.is_blocked && (
+                      <button
+                        className="admin-btn"
+                        disabled={busyUserId === u.id}
+                        onClick={() => blockUser(u)}
+                      >
+                        {busyUserId === u.id ? "Blocking..." : "⛔ Block"}
+                      </button>
+                    )}
+
+                    {!u.is_admin && u.is_blocked && (
+                      <button
+                        className="admin-btn"
+                        disabled={busyUserId === u.id}
+                        onClick={() => unblockUser(u)}
+                      >
+                        {busyUserId === u.id ? "Unblocking..." : "✅ Unblock"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="admin-panel">
+          <h2 className="admin-panel-title">📊 User Progress</h2>
+
+          {!selectedUser && <p>Select a user to view topic progress.</p>}
+
+          {selectedUser && !progress && (
+            <p>Loading progress for {selectedUser.username}...</p>
+          )}
+
+          {selectedUser && progress && (
+            <div className="progress-box">
+              <div className="progress-user">
+                <div className="progress-name">
+                  {selectedUser.username}{" "}
+                  {selectedUser.is_blocked && <span>⛔</span>}
+                </div>
+                <div className="progress-id">User ID: {selectedUser.id}</div>
+
+                {/* Optional: show block reason if present */}
+                {selectedUser.is_blocked && selectedUser.blocked_reason && (
+                  <div style={{ marginTop: 6, opacity: 0.9 }}>
+                    <b>Reason:</b> {selectedUser.blocked_reason}
+                  </div>
+                )}
+              </div>
+
+              <div className="progress-list">
+                {[1, 2, 3, 4].map((gid) => {
+                  const best = progress.best_scores?.[gid] ?? 0;
+                  return (
+                    <div key={gid} className="progress-item">
+                      <div className="progress-label">{TOPIC_LABELS[gid]}</div>
+
+                      <div className="progress-bar">
+                        <div
+                          className="progress-fill"
+                          style={{ width: `${Math.min(100, best)}%` }}
+                        />
+                      </div>
+
+                      <div className="progress-score">{best}</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
-          <button style={styles.btnOk} onClick={loadSummary}>Refresh</button>
-        </div>
-      )}
+        </section>
+      </div>
     </div>
   );
 }
-
-const tabBtn = (active) => ({
-  padding: "10px 14px",
-  borderRadius: 12,
-  border: "1px solid rgba(148,163,184,0.25)",
-  background: active ? "rgba(34,197,94,0.25)" : "rgba(2,6,23,0.35)",
-  color: "#e2e8f0",
-  cursor: "pointer",
-  fontWeight: 800,
-});
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    padding: 18,
-    background: "linear-gradient(180deg,#050a12,#070f1b)",
-    color: "#e2e8f0",
-    fontFamily: "system-ui,Segoe UI,Roboto",
-  },
-  top: { display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 },
-  tabs: { display: "flex", gap: 10, flexWrap: "wrap" },
-  h1: { margin: 0, fontSize: 28, fontWeight: 900 },
-  h2: { marginTop: 0 },
-  card: {
-    marginTop: 14,
-    padding: 14,
-    borderRadius: 16,
-    border: "1px solid rgba(148,163,184,0.25)",
-    background: "rgba(2,6,23,0.45)",
-  },
-  table: { width: "100%", borderCollapse: "collapse" },
-  toast: {
-    marginTop: 12,
-    padding: 10,
-    borderRadius: 12,
-    background: "rgba(2,6,23,0.55)",
-    border: "1px solid rgba(148,163,184,0.25)",
-  },
-  loading: { marginTop: 12, opacity: 0.9 },
-  error: { marginTop: 10, color: "#fca5a5", fontWeight: 800 },
-  small: { opacity: 0.85, fontSize: 12 },
-  btnBad: {
-    border: "none",
-    borderRadius: 12,
-    padding: "8px 12px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-  btnOk: {
-    border: "none",
-    borderRadius: 12,
-    padding: "8px 12px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 10 },
-  stat: {
-    padding: 12,
-    borderRadius: 14,
-    background: "rgba(15,23,42,0.6)",
-    border: "1px solid rgba(148,163,184,0.18)",
-  },
-};
