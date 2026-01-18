@@ -38,7 +38,21 @@ def login(data: schemas.UserLogin, db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == data.email).first()
 
     if not user or not verify_password(data.password, user.password):
+        # ✅ track failed attempts if user exists
+        if user:
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            db.commit()
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    # ✅ if blocked, deny
+    if user.is_blocked:
+        raise HTTPException(status_code=403, detail=f"Account blocked: {user.blocked_reason or 'Contact admin'}")
+
+    # ✅ reset failed attempts + store login metadata
+    user.failed_login_attempts = 0
+    user.last_login_at = datetime.utcnow()
+    user.last_login_ip = request.client.host if request.client else None
+    db.commit()
 
     # ✅ real JWT token
     token = create_access_token({"sub": str(user.id)})

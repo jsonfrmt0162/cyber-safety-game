@@ -399,7 +399,7 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
   const levelCfg = useMemo(() => {
     return level === 1
       ? { finishX: 4200, baseSpeed: 3.2, badChance: 0.30, label: "Warm-up Run" }
-      : { finishX: 5600, baseSpeed: 4.4, badChance: 0.42, label: "Speed Run" };
+      : { finishX: 5600, baseSpeed: 5.4, badChance: 0.42, label: "Speed Run" };
   }, [level]);
 
   // world state
@@ -473,7 +473,7 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
     // compute cfg (don’t rely on stale levelCfg)
     const cfg = startLevel === 1
       ? { finishX: 4200, baseSpeed: 3.2, badChance: 0.30 }
-      : { finishX: 5600, baseSpeed: 4.4, badChance: 0.42 };
+      : { finishX: 5600, baseSpeed: 5.4, badChance: 0.42 };
 
     stateRef.current = {
       t: 0,
@@ -582,7 +582,7 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
       // movement
       const cfg = levelRef.current === 1
         ? { baseSpeed: 3.2 }
-        : { baseSpeed: 4.4 };
+        : { baseSpeed: 5.4 };
 
       let speed = cfg.baseSpeed * dt;
 

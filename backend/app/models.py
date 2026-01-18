@@ -13,6 +13,14 @@ class User(Base):
     password = Column(String(255), nullable=False)
     is_admin = Column(Boolean, default=False) 
 
+    is_blocked = Column(Boolean, default=False)
+    blocked_reason = Column(String, nullable=True)
+    blocked_at = Column(DateTime(timezone=True), nullable=True)
+
+    failed_login_attempts = Column(Integer, default=0)
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
+    last_login_ip = Column(String, nullable=True)
+
     birthday = Column(Date, nullable=False)
     age = Column(Integer, nullable=False)
 

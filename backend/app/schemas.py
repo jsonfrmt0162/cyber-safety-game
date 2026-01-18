@@ -1,6 +1,7 @@
 # app/schemas.py
 from pydantic import BaseModel, EmailStr
-from datetime import date
+from datetime import date, datetime
+from typing import Optional, List
 
 
 class UserRegister(BaseModel):
@@ -24,9 +25,23 @@ class UserOut(BaseModel):
     age: int
     high_score: int | None = 0
     is_admin: bool
+    is_blocked: bool
+    blocked_reason: Optional[str] = None
+    failed_login_attempts: int
+    last_login_at: Optional[datetime] = None
+    last_login_ip: Optional[str] = None
 
     class Config:
         orm_mode = True
+
+class BlockUserRequest(BaseModel):
+    reason: Optional[str] = "Blocked by admin"
+
+class AdminReportOut(BaseModel):
+    total_users: int
+    total_blocked: int
+    total_suspicious: int
+    top_scores: list
 
 class AdminStatsOut(BaseModel):
     total_users: int
