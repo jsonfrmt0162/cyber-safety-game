@@ -1,5 +1,5 @@
 # app/routes/users.py
-from fastapi import APIRouter, Depends, HTTPException, request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app import schemas, models, database
 from app.auth import hash_password, verify_password, create_access_token
