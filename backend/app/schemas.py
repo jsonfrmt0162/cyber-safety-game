@@ -67,3 +67,11 @@ class ScoreIn(BaseModel):
 class ScoreEntry(BaseModel):
     username: str
     score: int
+
+class AdminCreateUser(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+    birthday: date
+    age: int
+    is_admin: bool = False

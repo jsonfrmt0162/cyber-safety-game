@@ -40,3 +40,8 @@ export const getUserProgress = (userId) =>
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+export const adminCreateUser = async (payload) => {
+  const res = await api.post("/admin/users_create", payload);
+  return res.data;
+};

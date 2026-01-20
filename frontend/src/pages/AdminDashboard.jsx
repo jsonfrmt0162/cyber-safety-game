@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { api } from "../services/api";
+import { api, adminCreateUser } from "../services/api"; // ✅ import both from same file
 import "../styles/AdminDashboard.css";
 import { useNavigate } from "react-router-dom";
 
@@ -24,6 +24,18 @@ export default function AdminDashboard() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all"); // all | blocked | suspicious | players | admins
 
+  // ✅ Create user modal state
+  const [showCreate, setShowCreate] = useState(false);
+  const [createBusy, setCreateBusy] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    username: "",
+    email: "",
+    password: "",
+    birthday: "",
+    age: "",
+    is_admin: false,
+  });
+
   const navigate = useNavigate();
 
   const fetchAll = async () => {
@@ -32,7 +44,7 @@ export default function AdminDashboard() {
       const [statsRes, usersRes, suspiciousRes] = await Promise.all([
         api.get("/admin/stats"),
         api.get("/admin/users"),
-        api.get("/admin/users/suspicious").catch(() => ({ data: [] })), // if route not yet deployed, don't crash
+        api.get("/admin/users/suspicious").catch(() => ({ data: [] })),
       ]);
 
       setStats(statsRes.data);
@@ -55,8 +67,6 @@ export default function AdminDashboard() {
       `Block ${user.username}?\n\nEnter reason (optional):`,
       "Suspicious activity"
     );
-
-    // If admin pressed Cancel, do nothing
     if (reason === null) return;
 
     setBusyUserId(user.id);
@@ -64,11 +74,10 @@ export default function AdminDashboard() {
       await api.post(`/admin/users/${user.id}/block`, { reason });
       await fetchAll();
 
-      // refresh selected user view
       if (selectedUser?.id === user.id) {
-        const updated = (prev) =>
-          prev ? { ...prev, is_blocked: true, blocked_reason: reason } : prev;
-        setSelectedUser(updated);
+        setSelectedUser((prev) =>
+          prev ? { ...prev, is_blocked: true, blocked_reason: reason } : prev
+        );
       }
     } catch (e) {
       alert(e?.response?.data?.detail || "Failed to block user");
@@ -96,6 +105,61 @@ export default function AdminDashboard() {
     } finally {
       setBusyUserId(null);
     }
+  };
+
+  // ✅ Create user submit
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+
+    // basic frontend validation
+    if (!createForm.username || !createForm.email || !createForm.password) {
+      alert("Please fill up username, email, password.");
+      return;
+    }
+    if (!createForm.birthday) {
+      alert("Please select birthday.");
+      return;
+    }
+    const ageNum = Number(createForm.age);
+    if (!ageNum || ageNum < 13 || ageNum > 17) {
+      alert("Age must be between 13 and 17.");
+      return;
+    }
+
+    setCreateBusy(true);
+    try {
+      await adminCreateUser({
+        username: createForm.username.trim(),
+        email: createForm.email.trim(),
+        password: createForm.password,
+        birthday: createForm.birthday, // "YYYY-MM-DD"
+        age: ageNum,
+        is_admin: !!createForm.is_admin,
+      });
+
+      // close + reset
+      setShowCreate(false);
+      setCreateForm({
+        username: "",
+        email: "",
+        password: "",
+        birthday: "",
+        age: "",
+        is_admin: false,
+      });
+
+      await fetchAll();
+      alert("User created ✅");
+    } catch (err) {
+      alert(err?.response?.data?.detail || "Failed to create user");
+    } finally {
+      setCreateBusy(false);
+    }
+  };
+
+  const closeCreateModal = () => {
+    if (createBusy) return;
+    setShowCreate(false);
   };
 
   useEffect(() => {
@@ -145,9 +209,15 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        <button className="admin-refresh" onClick={fetchAll}>
-          🔄 Refresh
-        </button>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button className="admin-refresh" onClick={() => setShowCreate(true)}>
+            ➕ Create User
+          </button>
+
+          <button className="admin-refresh" onClick={fetchAll}>
+            🔄 Refresh
+          </button>
+        </div>
       </header>
 
       {stats && (
@@ -176,6 +246,103 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* ✅ Create User Modal */}
+      {showCreate && (
+        <div className="admin-modal-backdrop" onClick={closeCreateModal}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+              <h2 className="admin-panel-title" style={{ marginBottom: 6 }}>
+                ➕ Create User
+              </h2>
+              <button
+                type="button"
+                className="admin-btn ghost"
+                onClick={closeCreateModal}
+                disabled={createBusy}
+              >
+                ✖
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="admin-modal-form">
+              <input
+                placeholder="Username"
+                value={createForm.username}
+                onChange={(e) =>
+                  setCreateForm((p) => ({ ...p, username: e.target.value }))
+                }
+                required
+              />
+
+              <input
+                placeholder="Email"
+                type="email"
+                value={createForm.email}
+                onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))}
+                required
+              />
+
+              <input
+                placeholder="Password"
+                type="password"
+                value={createForm.password}
+                onChange={(e) =>
+                  setCreateForm((p) => ({ ...p, password: e.target.value }))
+                }
+                required
+              />
+
+              <div className="admin-modal-row">
+                <input
+                  type="date"
+                  value={createForm.birthday}
+                  onChange={(e) =>
+                    setCreateForm((p) => ({ ...p, birthday: e.target.value }))
+                  }
+                  required
+                />
+
+                <input
+                  type="number"
+                  min="13"
+                  max="17"
+                  placeholder="Age (13-17)"
+                  value={createForm.age}
+                  onChange={(e) => setCreateForm((p) => ({ ...p, age: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <label className="admin-modal-check">
+                <input
+                  type="checkbox"
+                  checked={createForm.is_admin}
+                  onChange={(e) =>
+                    setCreateForm((p) => ({ ...p, is_admin: e.target.checked }))
+                  }
+                />
+                Create as Admin
+              </label>
+
+              <div className="admin-modal-actions">
+                <button
+                  type="button"
+                  className="admin-btn ghost"
+                  onClick={closeCreateModal}
+                  disabled={createBusy}
+                >
+                  Cancel
+                </button>
+
+                <button type="submit" className="admin-btn" disabled={createBusy}>
+                  {createBusy ? "Creating..." : "Create"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Optional: suspicious panel */}
       {suspiciousUsers?.length > 0 && (
         <div className="admin-panel" style={{ marginTop: 16 }}>
@@ -197,8 +364,7 @@ export default function AdminDashboard() {
               <div key={u.id} className="admin-row">
                 <div>{u.id}</div>
                 <div>
-                  {u.username}{" "}
-                  <span style={{ marginLeft: 8, fontWeight: 800 }}>🚩</span>
+                  {u.username} <span style={{ marginLeft: 8, fontWeight: 800 }}>🚩</span>
                 </div>
                 <div className="admin-email">{u.email}</div>
                 <div>{u.failed_login_attempts ?? 0}</div>
@@ -338,20 +504,16 @@ export default function AdminDashboard() {
 
           {!selectedUser && <p>Select a user to view topic progress.</p>}
 
-          {selectedUser && !progress && (
-            <p>Loading progress for {selectedUser.username}...</p>
-          )}
+          {selectedUser && !progress && <p>Loading progress for {selectedUser.username}...</p>}
 
           {selectedUser && progress && (
             <div className="progress-box">
               <div className="progress-user">
                 <div className="progress-name">
-                  {selectedUser.username}{" "}
-                  {selectedUser.is_blocked && <span>⛔</span>}
+                  {selectedUser.username} {selectedUser.is_blocked && <span>⛔</span>}
                 </div>
                 <div className="progress-id">User ID: {selectedUser.id}</div>
 
-                {/* Optional: show block reason if present */}
                 {selectedUser.is_blocked && selectedUser.blocked_reason && (
                   <div style={{ marginTop: 6, opacity: 0.9 }}>
                     <b>Reason:</b> {selectedUser.blocked_reason}

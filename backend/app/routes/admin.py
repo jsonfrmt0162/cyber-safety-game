@@ -4,8 +4,9 @@ from sqlalchemy import func, distinct
 from datetime import datetime
 
 from app.database import get_db
-from app import models
+from app import models, schemas
 from app.deps import require_admin
+from app.auth import hash_password
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -123,3 +124,44 @@ def suspicious_users(db: Session = Depends(get_db), _=Depends(require_admin)):
         }
         for u in rows
     ]
+
+@router.post("/users_create", status_code=201)
+def admin_create_user(
+    payload: schemas.AdminCreateUser,
+    db: Session = Depends(get_db),
+    _=Depends(require_admin),
+):
+    # same rule as register
+    if payload.age < 13 or payload.age > 17:
+        raise HTTPException(status_code=400, detail="Age must be between 13 and 17.")
+
+    # unique checks
+    if db.query(models.User).filter(models.User.email == payload.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    if db.query(models.User).filter(models.User.username == payload.username).first():
+        raise HTTPException(status_code=400, detail="Username already taken")
+
+    new_user = models.User(
+        username=payload.username,
+        email=payload.email,
+        password=hash_password(payload.password),  # ✅ store hashed
+        birthday=payload.birthday,
+        age=payload.age,
+        is_admin=payload.is_admin,
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {
+        "id": new_user.id,
+        "username": new_user.username,
+        "email": new_user.email,
+        "is_admin": new_user.is_admin,
+        "age": new_user.age,
+        "birthday": str(new_user.birthday),
+        "is_blocked": bool(getattr(new_user, "is_blocked", False)),
+        "blocked_reason": getattr(new_user, "blocked_reason", None),
+    }

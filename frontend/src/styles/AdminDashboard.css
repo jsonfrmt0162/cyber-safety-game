@@ -484,3 +484,67 @@
     .admin-title { font-size: 24px; }
   }
   
+  .admin-modal-backdrop{
+    position: fixed;
+    inset: 0;
+    background: rgba(2,6,23,0.72);
+    backdrop-filter: blur(10px);
+    display: grid;
+    place-items: center;
+    z-index: 1000;
+  }
+  
+  .admin-modal{
+    width: min(560px, calc(100% - 28px));
+    border-radius: 18px;
+    padding: 14px;
+    border: 1px solid rgba(148,163,184,0.22);
+    background: rgba(2,6,23,0.78);
+    box-shadow: 0 30px 120px rgba(0,0,0,0.55);
+  }
+  
+  .admin-modal-form{
+    display: grid;
+    gap: 10px;
+  }
+  
+  .admin-modal-form input{
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(148,163,184,0.22);
+    background: rgba(2,6,23,0.55);
+    color: #e2e8f0;
+    outline: none;
+  }
+  
+  .admin-modal-form input:focus{
+    border-color: rgba(98,174,218,0.7);
+    box-shadow: 0 0 0 3px rgba(98,174,218,0.18);
+  }
+  
+  .admin-modal-row{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  
+  .admin-modal-check{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 900;
+    opacity: 0.95;
+  }
+  
+  .admin-modal-actions{
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  
+  .admin-btn.ghost{
+    background: rgba(148,163,184,0.16);
+    color: #e2e8f0;
+  }
+  
