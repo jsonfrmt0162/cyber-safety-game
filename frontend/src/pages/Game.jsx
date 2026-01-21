@@ -2000,7 +2000,7 @@ export default function Game() {
   const numericGameId = Number(gameId);
 
   const [questions, setQuestions] = useState([]);
-  const [gameTitle, setGameTitle] = useState("Cyber Safety Quiz");
+  const [gameTitle, setGameTitle] = useState("CyberQuest.TO Quiz");
   const [gameEmoji, setGameEmoji] = useState("🎮");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState(null);
@@ -2087,7 +2087,7 @@ export default function Game() {
 
   const narrationText = useMemo(() => {
     if (!currentQuestion || !questions.length) return "";
-    const baseIntro = `Cyber safety quiz. Topic: ${currentQuestion.topic}. Question ${
+    const baseIntro = `CyberQuest.TO quiz. Topic: ${currentQuestion.topic}. Question ${
       currentIndex + 1
     } of ${questions.length}.`;
     const questionPart = currentQuestion.question;
@@ -2336,7 +2336,7 @@ export default function Game() {
   
         {completed && (
           <div className="mini-complete-banner">
-            🎉 Nice memory! You matched all the cyber safety pairs in {moves} moves.
+            🎉 Nice memory! You matched all the cyber quest pairs in {moves} moves.
           </div>
         )}
       </div>

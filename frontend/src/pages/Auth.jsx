@@ -99,12 +99,12 @@ export default function Auth() {
               <div className="hero-brand-row">
                 <img
                   src={cyberQuestLogo}
-                  alt="CyberQuest logo"
+                  alt="CyberQuest.TO logo"
                   className="hero-logo"
                 />
                 <div>
                   <h1 className="login-hero-title">
-                    <span className="emoji">🛡️</span> CyberQuest
+                    <span className="emoji">🛡️</span> CyberQuest.TO
                   </h1>
                   <p className="login-hero-tagline">
                     Level up your digital defense
@@ -144,11 +144,11 @@ export default function Auth() {
             <div className="login-logo">
               <img
                 src={cyberQuestLogo}
-                alt="CyberQuest logo small"
+                alt="CyberQuest.TO logo small"
                 className="login-logo-img"
               />
               <div className="login-logo-text">
-                <span className="login-logo-title">CyberQuest</span>
+                <span className="login-logo-title">CyberQuest.TO</span>
                 <span className="login-logo-subtitle">
                   Secure Player Portal
                 </span>
@@ -179,7 +179,7 @@ export default function Auth() {
               </h2>
               <p className="login-subtext">
                 {isLogin
-                  ? "Enter your details to continue your CyberQuest journey."
+                  ? "Enter your details to continue your CyberQuest.TO journey."
                   : "Just a few details so we can track your missions and scores."}
               </p>
             </div>
@@ -241,11 +241,11 @@ export default function Auth() {
               <button type="submit" className="login-button" disabled={loading}>
                 {loading
                   ? isLogin
-                    ? "Logging you into CyberQuest..."
-                    : "Creating your CyberQuest profile..."
+                    ? "Logging you into CyberQuest.TO..."
+                    : "Creating your CyberQuest.TO profile..."
                   : isLogin
-                  ? "Enter CyberQuest"
-                  : "Join CyberQuest"}
+                  ? "Enter CyberQuest.TO"
+                  : "Join CyberQuest.TO"}
               </button>
   
               <p className="login-meta">
@@ -260,7 +260,7 @@ export default function Auth() {
                 className="signup-link"
                 onClick={() => setIsLogin((prev) => !prev)}
               >
-                {isLogin ? "Create a CyberQuest account" : "Log in instead"}
+                {isLogin ? "Create a CyberQuest.TO account" : "Log in instead"}
               </span>
             </p>
           </div>
@@ -273,7 +273,7 @@ export default function Auth() {
         text={
           isLogin
             ? "Checking your credentials..."
-            : "Setting up your CyberQuest profile..."
+            : "Setting up your CyberQuest.TO profile..."
         }
       />
   

@@ -86,7 +86,7 @@ function GameCard({ game, progress, onPlay, locked, prereqTitle }) {
           <span className="game-icon">{game.emoji}</span>
           <div className="game-header-text">
             <h5 className="game-title"> Lesson {game.id} : {game.title}</h5>
-            <p className="game-subtitle">Cyber Quest Quiz</p>
+            <p className="game-subtitle">CyberQuest.TO Quiz</p>
           </div>
           {locked ? (
             <span className="badge badge-locked">Locked</span>
@@ -269,7 +269,7 @@ const quizProgress = useMemo(() => {
             🛠 Admin Panel
           </button>
         )}
-        
+
         <button
            className="ghost-button"
            type="button"
@@ -307,7 +307,7 @@ const quizProgress = useMemo(() => {
 
       <section className="section-heading">
          <span className="section-label">
-           🧭 Your Cyber Quest Journey
+           🧭 Your CyberQuest.TO Journey
          </span>
       </section>
 
@@ -355,7 +355,7 @@ const quizProgress = useMemo(() => {
           <div className="tip-card">
             <div className="card-title-row">
               <span className="card-icon">💡</span>
-              <h2>Cyber Quest Tip</h2>
+              <h2>CyberQuest.TO Tip</h2>
             </div>
             <p>{todaysTip}</p>
           </div>
@@ -404,7 +404,7 @@ const quizProgress = useMemo(() => {
       <div className="info-grid">
         {/* left: checklist */}
         <div className="safety-card">
-          <h2>🛡️ Cyber Quest Checklist</h2>
+          <h2>🛡️ CyberQuest.TO Checklist</h2>
           <p className="safety-intro">
             Before you go online, remember these smart habits from your lessons.
           </p>
@@ -421,7 +421,7 @@ const quizProgress = useMemo(() => {
 
         {/* right: why it matters */}
         <div className="why-card">
-          <h2>🌍 Why Cyber Quest Portal Matters</h2>
+          <h2>🌍 Why CyberQuest.TO Portal Matters</h2>
           <p>
             The internet is an amazing place to learn, create, play, and connect
             with others. But just like crossing the street, we need to stay smart
@@ -435,7 +435,7 @@ const quizProgress = useMemo(() => {
 
       {/* Topic description heading */}
       <section className="topic-overview">
-        <h2>🧙‍♂️ Cyber Quest Topics</h2>
+        <h2>🧙‍♂️ CyberQuest.TO Topics</h2>
         <p className="topic-overview-text">
           These four quizzes match your lesson topics: digital footprints,
           personal information, passwords & passphrases, and social media

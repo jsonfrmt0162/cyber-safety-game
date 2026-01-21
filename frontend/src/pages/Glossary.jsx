@@ -26,7 +26,7 @@ export default function Glossary() {
       <div className="glossary-hero">
         <div className="glossary-hero-icon">📚</div>
         <div>
-          <h1>Cyber Safety Glossary</h1>
+          <h1>CyberQuest.TO Glossary</h1>
           <p>
             Quick definitions to help you understand important words from your
             online safety lessons.
@@ -104,7 +104,7 @@ export default function Glossary() {
       </div>
               {/* CYBER SAFETY PLEDGE */}
               <div className="pledge-card">
-        <h2>✋ Cyber Safety Pledge</h2>
+        <h2>✋ CyberQuest.TO Pledge</h2>
         <p>
           By using this site, I promise to:
         </p>
