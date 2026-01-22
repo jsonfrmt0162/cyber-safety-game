@@ -4,6 +4,20 @@ import player  from "../assets/player.png";
 import { api } from "../services/api";
 import useSprite from "../hooks/useSprite";
 
+import good1 from "../assets/good1.png"
+import good2 from "../assets/good2.png"
+import good3 from "../assets/good3.png"
+import good4 from "../assets/good4.png"
+import bad1 from "../assets/bad1.png"
+import bad2 from "../assets/bad2.png"
+import bad3 from "../assets/bad3.png"
+import bad4 from "../assets/bad4.png"
+import bg1 from "../assets/bg1.jpg";
+import bg2 from "../assets/bg2.png";
+import bg3 from "../assets/b3.png";
+import bg4 from "../assets/bg4.png";
+
+
 /**
  * Topic 1: Digital Footprint Trail Run (side runner + "THINK" slow mode + footprints meter)
  * Topic 2: Treasure Guard (top-down + block pirates asking info + deliver treasure)
@@ -23,6 +37,74 @@ const rand = (a, b) => a + Math.random() * (b - a);
 const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
 const heroImg = new Image();
 heroImg.src = player;
+
+const iconCache = {
+  good: {},
+  bad: {},
+};
+
+function getIconImage(topic, type) {
+  // type: "good" | "bad"
+  const src = GAME_ICONS[topic]?.[type];
+  if (!src) return null;
+
+  const bucket = iconCache[type];
+  if (bucket[topic]) return bucket[topic];
+
+  const img = new Image();
+  img.src = src;
+  bucket[topic] = img;
+  return img;
+}
+
+// -------------------- STATIC CONTENT -------------------- //
+
+const GAME_ICONS = {
+  1: { good: good1, bad: bad1 },
+  2: { good: good2, bad: bad2 },
+  3: { good: good3, bad: bad3 },
+  4: { good: good4, bad: bad4 },
+};
+
+const GAME_BACKGROUNDS = {
+  1: bg1,
+  2: bg2,
+  3: bg3,
+  4: bg4,
+};
+
+const bgCache = {};
+
+function getBgImage(topic) {
+  const src = GAME_BACKGROUNDS[topic];
+  if (!src) return null;
+
+  if (bgCache[topic]) return bgCache[topic];
+
+  const img = new Image();
+  img.src = src;
+  bgCache[topic] = img;
+  return img;
+}
+
+function drawBackgroundCover(ctx, img, w, h) {
+  if (!img || !img.complete || !img.naturalWidth) return;
+
+  const iw = img.naturalWidth;
+  const ih = img.naturalHeight;
+
+  // cover logic
+  const scale = Math.max(w / iw, h / ih);
+  const dw = iw * scale;
+  const dh = ih * scale;
+
+  const dx = (w - dw) / 2;
+  const dy = (h - dh) / 2;
+
+  ctx.drawImage(img, dx, dy, dw, dh);
+}
+
+
 
 function useCanvasSize(containerRef, targetAspect = 16 / 9) {
   const [size, setSize] = useState({ w: 1200, h: 675 });
@@ -105,6 +187,11 @@ function drawParallaxBackground(ctx, w, h, t, variant = "ocean") {
     ctx.ellipse(x, y, 220, 72, 0, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+function drawIcon(ctx, img, x, y, size = 34) {
+  if (!img) return;
+  ctx.drawImage(img, x - size / 2, y - size / 2, size, size);
 }
 
 
@@ -349,6 +436,7 @@ const MAX_LEVEL = 2;
 function levelBadge(level) {
   return `🧭 Level: ${level}/${MAX_LEVEL}`;
 }
+
 
 
   
@@ -646,7 +734,11 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
 
       // draw
       ctx.clearRect(0, 0, w, h);
-      drawParallaxBackground(ctx, w, h, st.t, "ocean");
+      const bgImg = getBgImage(1);
+      drawBackgroundCover(ctx, bgImg, w, h);
+
+      // optional: keep your parallax overlay on top (nice effect)
+     // drawParallaxBackground(ctx, w, h, st.t, "ocean");
 
       // stars
       ctx.fillStyle = "rgba(255,255,255,0.08)";
@@ -684,7 +776,11 @@ export function DigitalFootprintJourney2D({ userId, gameId, onBack, embedded = f
         ctx.fillStyle = "#0b1020";
         ctx.font = `700 ${Math.round(w * 0.016)}px system-ui`;
         ctx.textAlign = "center";
-        ctx.fillText(item.type === "good" ? "✅" : "⚠️", x, groundY - 20);
+        const goodIcon = getIconImage(1, "good");
+        const badIcon  = getIconImage(1, "bad");
+
+        drawIcon(ctx, item.type === "good" ? goodIcon : badIcon, x, groundY - 25, 28);
+
 
         // label pill
         const label = item.text;
@@ -1152,11 +1248,8 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
       ctx.clearRect(0, 0, w, h);
 
       // background
-      const g = ctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, "#081b2a");
-      g.addColorStop(1, "#04111c");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
+      const bgImg = getBgImage(2);
+      drawBackgroundCover(ctx, bgImg, w, h);
 
       // path
       ctx.fillStyle = "rgba(234,179,8,0.12)";
@@ -1195,7 +1288,8 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
         ctx.fill();
         ctx.fillStyle = "#0b1020";
         ctx.font = `900 ${Math.round(w * 0.018)}px system-ui`;
-        ctx.fillText("🔑", x, k.y + 6);
+        const goodIcon = getIconImage(2, "good");
+        drawIcon(ctx, goodIcon, x, k.y, 26);        
       }
 
       // pirates
@@ -1212,7 +1306,9 @@ export function PersonalInfoJourney2D({ userId, gameId, onBack, embedded = false
         ctx.fillStyle = "#0b1020";
         ctx.font = `900 ${Math.round(w * 0.018)}px system-ui`;
         ctx.textAlign = "center";
-        ctx.fillText("🏴‍☠️", x, p.y + 6);
+        const badIcon = getIconImage(2, "bad");
+        drawIcon(ctx, badIcon, x, p.y, 28);
+
 
         ctx.fillStyle = "rgba(226,232,240,0.95)";
         ctx.font = `800 ${Math.round(w * 0.014)}px system-ui`;
@@ -1612,7 +1708,10 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
 
       // draw
       ctx.clearRect(0, 0, w, h);
-      drawParallaxBackground(ctx, w, h, st.t, "forge");
+      const bgImg = getBgImage(3);
+      drawBackgroundCover(ctx, bgImg, w, h);
+    //  drawParallaxBackground(ctx, w, h, st.t, "forge"); // optional overlay
+
 
       // track
       ctx.fillStyle = "rgba(148,163,184,0.10)";
@@ -1646,7 +1745,10 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
         ctx.fillStyle = "#0b1020";
         ctx.font = `900 ${Math.round(w * 0.022)}px system-ui`;
         ctx.textAlign = "center";
-        ctx.fillText(it.emoji, x, y + 10);
+        const goodIcon = getIconImage(3, "good");
+        const badIcon  = getIconImage(3, "bad");
+        drawIcon(ctx, it.good ? goodIcon : badIcon, x, y, 30);
+
 
         const label = it.label;
         ctx.save();
@@ -2157,7 +2259,10 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
 
       // draw
       ctx.clearRect(0, 0, w, h);
-      drawParallaxBackground(ctx, w, h, st.t, "city");
+      const bgImg = getBgImage(4);
+      drawBackgroundCover(ctx, bgImg, w, h);
+   //   drawParallaxBackground(ctx, w, h, st.t, "city"); // optional overlay
+
 
       // city blocks
       ctx.fillStyle = "rgba(99,102,241,0.08)";
@@ -2192,7 +2297,9 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
         ctx.fillStyle = "#0b1020";
         ctx.font = `900 ${Math.round(w * 0.016)}px system-ui`;
         ctx.textAlign = "center";
-        ctx.fillText(sw.flipped ? "PRIVATE" : "SWITCH", x, sw.y + 6);
+        const goodIcon = getIconImage(4, "good");
+        drawIcon(ctx, goodIcon, x, sw.y, 24);
+
       }
 
       // pickups
@@ -2220,7 +2327,8 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
         ctx.fillStyle = "#0b1020";
         ctx.font = `900 ${Math.round(w * 0.016)}px system-ui`;
         ctx.textAlign = "center";
-        ctx.fillText("👤", x, s2.y + 6);
+        const badIcon = getIconImage(4, "bad");
+        drawIcon(ctx, badIcon, x, s2.y, 26);
 
         ctx.fillStyle = "rgba(226,232,240,0.95)";
         ctx.font = `800 ${Math.round(w * 0.013)}px system-ui`;
