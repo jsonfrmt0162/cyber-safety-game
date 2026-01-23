@@ -1049,3 +1049,21 @@
     border-radius: 12px;
   }
   
+  
+  .lesson-video {
+    width: 100%;
+    max-width: 900px;
+    margin: 16px auto 24px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: transparent; /* 🚫 no black */
+  }
+  
+  .lesson-video-player {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;     /* 🔥 IMPORTANT */
+    object-fit: cover;        /* 🔥 removes black bars */
+    display: block;
+  }
+  

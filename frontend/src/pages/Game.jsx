@@ -10,6 +10,7 @@ import {
     PasswordsJourney2D,
     SocialMediaJourney2D,
   } from "./TopicJourneyMiniGame";
+import lessonVideo1 from "../assets/video1.mp4";
 
 // -------------------- STATIC CONTENT -------------------- //
 
@@ -2405,9 +2406,24 @@ export default function Game() {
 
           {/* LESSON MODE: gamified lesson flow */}
           {mode === "lesson" && currentLesson && (
-            //DITO 
-            
+            //DITO    
             <div className="lesson-wrapper">
+             
+               <div className="lesson-video">
+                 <video
+                   controls
+                   playsInline
+                   preload="metadata"
+                   controlsList="nodownload"
+                   className="lesson-video-player"
+                 >
+                   <source src={lessonVideo1} type="video/mp4" />
+                   Your browser does not support the video tag.
+                 </video>
+               </div>
+
+
+
                {LESSON_INTRO[numericGameId] && (
                 <div className="lesson-box">
                   <h2>📖 {LESSON_INTRO[numericGameId].title}</h2>

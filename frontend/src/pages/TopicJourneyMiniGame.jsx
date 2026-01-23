@@ -2104,12 +2104,16 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
         alive: true,
         msg: ["DM?", "Follow me!", "Click link!", "Add me!", "Where do you live?"][Math.floor(rand(0, 5))],
       })),
-      pickups: Array.from({ length: cfg.pickups }).map((_, i) => ({
-        x: 360 + i * 220 + rand(-30, 30),
-        y: rand(160, 520),
-        r: 14,
-        taken: false,
-      })),
+      pickups: Array.from({ length: cfg.pickups }).map((_, i) => {
+        const worldX = 360 + i * 220 + rand(-30, 30);
+        return {
+          worldX,                    x: worldX,       
+          y: rand(160, 520),
+          r: 14,
+          taken: false,
+        };
+      }),
+      
       camX: 0,
     };
   };
@@ -2133,6 +2137,16 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
   };
 
   const canPassGate = (gate) => privacy === gate.needs;
+
+  const isBehindLockedGate = (worldX) => {
+    const st = stRef.current;
+    for (const g of st.gates) {
+      // if object is to the RIGHT of the gate AND gate is locked, it's unreachable
+      if (worldX > g.x && !canPassGate(g)) return true;
+    }
+    return false;
+  c};
+
 
   const finishFinal = async () => {
     setRunning(false);
@@ -2222,15 +2236,18 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
       // pickups
       for (const p of st.pickups) {
         if (p.taken) continue;
+        if (isBehindLockedGate(p.worldX ?? p.x)) continue; //
         if (dist(st.player.x, st.player.y, p.x, p.y) < st.player.r + p.r + 6) {
           p.taken = true;
           setScoreInstant(scoreRef.current + 80);
         }
       }
+      
 
       // strangers: penalty while public
       for (const s of st.strangers) {
         if (!s.alive) continue;
+        if (isBehindLockedGate(s.worldX ?? s.x)) continue;
         if (dist(st.player.x, st.player.y, s.x, s.y) < 58) {
           if (privacy === "public") {
             s.alive = false;
@@ -2238,6 +2255,7 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
           }
         }
       }
+      
 
       // action near switch toggles to private (one way per switch)
       if (keys.current.action) {
@@ -2303,8 +2321,11 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
       }
 
       // pickups
+
       for (const p2 of st.pickups) {
         if (p2.taken) continue;
+        if (isBehindLockedGate(p2.worldX ?? p2.x)) continue; // ✅ NEW
+      
         const x = p2.x - cam;
         ctx.fillStyle = "#eab308";
         ctx.beginPath();
@@ -2316,24 +2337,30 @@ export function SocialMediaJourney2D({ userId, gameId, onBack, embedded = false 
         ctx.fillText("⚙️", x, p2.y + 6);
       }
 
+
       // strangers
+    
       for (const s2 of st.strangers) {
         if (!s2.alive) continue;
+        if (isBehindLockedGate(s2.worldX ?? s2.x)) continue; // ✅ NEW
+      
         const x = s2.x - cam;
         ctx.fillStyle = "#ef4444";
         ctx.beginPath();
         ctx.arc(x, s2.y, s2.r, 0, Math.PI * 2);
         ctx.fill();
+      
         ctx.fillStyle = "#0b1020";
         ctx.font = `900 ${Math.round(w * 0.016)}px system-ui`;
         ctx.textAlign = "center";
         const badIcon = getIconImage(4, "bad");
         drawIcon(ctx, badIcon, x, s2.y, 26);
-
+      
         ctx.fillStyle = "rgba(226,232,240,0.95)";
         ctx.font = `800 ${Math.round(w * 0.013)}px system-ui`;
         ctx.fillText(s2.msg, x, s2.y - 28);
       }
+
 
       // exit
       const ex = st.exit.x - cam;
