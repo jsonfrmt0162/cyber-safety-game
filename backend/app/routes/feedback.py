@@ -69,3 +69,51 @@ def all_feedback(db: Session = Depends(get_db), _=Depends(require_admin)):
         }
         for r in rows
     ]
+
+
+
+@router.post("/", status_code=status.HTTP_201_CREATED)
+def submit_feedback(
+    data: FeedbackCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    feedback = Feedback(
+        user_id=current_user.id,
+        topic_id=data.topic_id,
+        rating=data.rating,
+        category=data.category,
+        message=data.message,
+        screenshot_url=data.screenshot_url,
+    )
+    db.add(feedback)
+    db.commit()
+    db.refresh(feedback)
+    return {"message": "Feedback submitted successfully"}
+
+@router.get("/admin", response_model=list[FeedbackOut])
+def get_all_feedback(
+    db: Session = Depends(get_db),
+    admin=Depends(get_current_admin_user),
+):
+    return (
+        db.query(Feedback)
+        .order_by(Feedback.created_at.desc())
+        .all()
+    )
+
+@router.post("/{feedback_id}/resolve")
+def resolve_feedback(
+    feedback_id: int,
+    db: Session = Depends(get_db),
+    admin=Depends(get_current_admin_user),
+):
+    feedback = db.query(Feedback).filter(Feedback.id == feedback_id).first()
+
+    if not feedback:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+
+    feedback.is_resolved = True
+    db.commit()
+
+    return {"message": "Feedback marked as resolved"}

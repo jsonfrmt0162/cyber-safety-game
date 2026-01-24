@@ -75,3 +75,24 @@ class AdminCreateUser(BaseModel):
     birthday: date
     age: int
     is_admin: bool = False
+
+class FeedbackCreate(BaseModel):
+    topic_id: int
+    rating: Optional[int] = None
+    category: Optional[str] = None
+    message: str
+    screenshot_url: Optional[str] = None
+
+class FeedbackOut(BaseModel):
+    id: int
+    user_id: int
+    topic_id: int
+    rating: Optional[int]
+    category: Optional[str]
+    message: str
+    screenshot_url: Optional[str]
+    is_resolved: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
