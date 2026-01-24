@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import users, game, scores
+from app.routes import users, game, scores, feedback
 from app.database import engine, SessionLocal
 from app import models
 from app.routes import admin
@@ -57,7 +57,7 @@ app.include_router(users.router)
 app.include_router(game.router)
 app.include_router(scores.router)
 app.include_router(admin.router)
-
+app.include_router(feedback.router)
 
 @app.get("/")
 def root():
