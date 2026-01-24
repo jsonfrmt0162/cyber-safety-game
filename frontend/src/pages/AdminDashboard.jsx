@@ -330,8 +330,7 @@ export default function AdminDashboard() {
                 <input
                   type="number"
                   min="13"
-                  max="17"
-                  placeholder="Age (13-17)"
+                  placeholder="Age (13 years old above)"
                   value={createForm.age}
                   onChange={(e) => setCreateForm((p) => ({ ...p, age: e.target.value }))}
                   required

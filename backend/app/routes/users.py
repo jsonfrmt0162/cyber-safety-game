@@ -10,8 +10,8 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.post("/register")
 def register(user: schemas.UserRegister, db: Session = Depends(database.get_db)):
-    if user.age < 13 or user.age > 17:
-        raise HTTPException(status_code=400, detail="Age must be between 13 and 17.")
+    if user.age < 13:
+        raise HTTPException(status_code=400, detail="Age must be 13 and up.")
 
     if db.query(models.User).filter(models.User.email == user.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
