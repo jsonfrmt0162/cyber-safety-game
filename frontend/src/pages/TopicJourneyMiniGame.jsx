@@ -1478,6 +1478,13 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
 
   const [paused, setPaused] = useState(false);
   const [result, setResult] = useState(null); // "win" | "locked"
+  const MAX_LIVES = 3;
+
+  const [lives, setLives] = useState(MAX_LIVES);
+  const livesRef = useRef(MAX_LIVES);
+  
+  const setLivesInstant = (v) => { livesRef.current = v; setLives(v); };
+
 
   const setScoreInstant = (v) => { scoreRef.current = v; setScore(v); };
   const setStrikesInstant = (v) => { strikesRef.current = v; setStrikes(v); };
@@ -1585,6 +1592,7 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
     if (startLevel === 1) {
       setScoreInstant(0);
       setStrikesInstant(0);
+      setLivesInstant(MAX_LIVES);
       setPartsInstant({ length: false, symbol: false, number: false, unique: false });
     } else {
       // keep score; but new level requires new parts
@@ -1687,10 +1695,22 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
             setScoreInstant(scoreRef.current + 120);
             spawnPop(st.pops, { x: popX, y: popY, text: "+120", good: true, emoji: "✨" });
           } else {
+            // bad pickup
             setStrikesInstant(strikesRef.current + 1);
             setScoreInstant(Math.max(0, scoreRef.current - 80));
+          
+            const nextLives = Math.max(0, livesRef.current - 1);
+            setLivesInstant(nextLives);
+          
             spawnPop(st.pops, { x: popX, y: popY, text: "-80", good: false, emoji: "👾" });
+          
+            // if no lives left, end run immediately
+            if (nextLives <= 0) {
+              setTimeout(() => finishLocked(), 0);
+              return;
+            }
           }
+          
         }
       }
 
@@ -1818,7 +1838,7 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
       ctx.font = `800 ${Math.round(w * 0.016)}px system-ui`;
       ctx.fillText(`Level: ${levelRef.current}/${MAX_LEVEL}`, w - 28, 44);
       ctx.fillText(`Score: ${scoreRef.current}`, w - 28, 70);
-      ctx.fillText(`Strikes: ${strikesRef.current}`, w - 28, 94);
+      ctx.fillText(`Lives: ${livesRef.current} ❤️ | Strikes: ${strikesRef.current}`, w - 28, 94);
 
       // parts bar
       const partChip = (ok, label, x) => {
@@ -1860,7 +1880,7 @@ export function PasswordsJourney2D({ userId, gameId, onBack, embedded = false })
       title="Topic 3 Mini-Game"
       subtitle={`Passwords — ${levelCfg.label}`}
       instructions={instructions}
-      badgeLeft={`🧭 Level: ${level}/${MAX_LEVEL} | 🧩 Parts: ${Object.values(parts).filter(Boolean).length}/4`}
+      badgeLeft={`🧭 Level: ${level}/${MAX_LEVEL} | ❤️ Lives: ${lives} | 🧩 Parts: ${Object.values(parts).filter(Boolean).length}/4`}
       badgeRight={`🏆 Score: ${score}`}
       onBack={onBack || (() => window.history.back())}
       theme="ocean"
