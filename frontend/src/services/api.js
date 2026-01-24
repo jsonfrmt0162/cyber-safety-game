@@ -45,3 +45,16 @@ export const adminCreateUser = async (payload) => {
   const res = await api.post("/admin/users_create", payload);
   return res.data;
 };
+
+export const submitFeedback = (payload) => 
+  api.post("/feedback", payload);
+
+export const fetchMyFeedback = (topicId) => 
+  api.get(`/feedback/mine?topic_id=${topicId}`);
+
+export const getAllFeedback = () =>
+  api.get("/feedback/admin").then((res) => res.data);
+
+// mark feedback as resolved (admin only)
+export const resolveFeedback = (feedbackId) =>
+  api.post(`/feedback/admin/${feedbackId}/resolve`)

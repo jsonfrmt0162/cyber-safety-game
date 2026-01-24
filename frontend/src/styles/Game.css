@@ -1047,23 +1047,117 @@
     background: #eef2ff;
     padding: 12px;
     border-radius: 12px;
-  }
-  
-  
+  }/* ===== Video wrapper ===== */
+.lesson-video {
+  width: 100%;
+  max-width: 900px;
+  margin: 14px auto 20px;
+
+  border-radius: 18px;
+  background: #000;
+  overflow: hidden;
+
+  /* ✅ CONTROL HEIGHT */
+  aspect-ratio: 16 / 9;
+  max-height: 56vh;
+
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* ===== Video element ===== */
+.lesson-video-player {
+  width: 100%;
+  height: 100%;
+  display: block;
+
+  /* ✅ THIS FIXES "fixilated" look */
+  object-fit: cover;
+
+  background: #000;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
   .lesson-video {
-    width: 100%;
-    max-width: 900px;
-    margin: 16px auto 24px;
-    border-radius: 16px;
-    overflow: hidden;
-    background: transparent; /* 🚫 no black */
+    max-height: 40vh;
+    border-radius: 14px;
   }
-  
-  .lesson-video-player {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;     /* 🔥 IMPORTANT */
-    object-fit: cover;        /* 🔥 removes black bars */
-    display: block;
-  }
-  
+}
+
+.feedback-wrapper {
+  margin-top: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 18px;
+  padding: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.feedback-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.feedback-sub {
+  margin-top: 6px;
+  opacity: 0.85;
+}
+
+.feedback-form {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.feedback-row {
+  display: grid;
+  gap: 6px;
+}
+
+.feedback-row label {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.feedback-row input,
+.feedback-row select,
+.feedback-row textarea {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  outline: none;
+  font: inherit;
+}
+
+.feedback-submit {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: none;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.feedback-history {
+  margin-top: 18px;
+}
+
+.feedback-item {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(240, 248, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.feedback-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.feedback-msg {
+  margin-top: 8px;
+  font-size: 14px;
+}

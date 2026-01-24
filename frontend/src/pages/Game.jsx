@@ -1,7 +1,7 @@
 // src/pages/Game.jsx
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef  } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { submitScore, getGameLeaderboard, getGames } from "../services/api";
+import { submitScore, getGameLeaderboard, getGames, submitFeedback, fetchMyFeedback } from "../services/api";
 import "../styles/Game.css";
 import useTextToSpeech from "../hooks/useTextToSpeech";
 import {
@@ -13,6 +13,7 @@ import {
 import lessonVideo1 from "../assets/video1.mp4";
 
 // -------------------- STATIC CONTENT -------------------- //
+
 
 const OBJECTIVES = {
   1: [
@@ -1281,6 +1282,8 @@ const RANK_TIERS = [
 ];
 
 
+
+
 function DigitalFootprintMiniGame() {
     const pairs = [
       {
@@ -1999,7 +2002,8 @@ export default function Game() {
   const { gameId } = useParams();
   const navigate = useNavigate();
   const numericGameId = Number(gameId);
-
+  const videoRef = useRef(null);
+  const [videoRatio, setVideoRatio] = useState("16 / 9");
   const [questions, setQuestions] = useState([]);
   const [gameTitle, setGameTitle] = useState("CyberQuest.TO Quiz");
   const [gameEmoji, setGameEmoji] = useState("🎮");
@@ -2072,6 +2076,74 @@ export default function Game() {
     };
     fetchLeaderboard();
   }, [numericGameId]);
+
+    // ===================== FEEDBACK TAB (Topic 4) =====================
+    const [fbForm, setFbForm] = useState({
+      topic_id: numericGameId,        // will be 4 on topic 4
+      rating: 5,
+      category: "suggestion",
+      message: "",
+    });
+  
+    const [fbBusy, setFbBusy] = useState(false);
+    const [fbList, setFbList] = useState([]);
+    const [fbLoaded, setFbLoaded] = useState(false);
+  
+    // keep topic_id synced when switching gameId
+    useEffect(() => {
+      setFbForm((p) => ({ ...p, topic_id: numericGameId }));
+      setFbList([]);
+      setFbLoaded(false);
+    }, [numericGameId]);
+
+    
+  const loadMyFeedback = async () => {
+    try {
+      const res = await fetchMyFeedback(numericGameId);
+      setFbList(res.data || []);
+    } catch (e) {
+      setFbList([]);
+    } finally {
+      setFbLoaded(true);
+    }
+  };
+
+  const handleSubmitFeedback = async (e) => {
+    e.preventDefault();
+
+    if (!fbForm.message.trim()) {
+      alert("Please type your feedback.");
+      return;
+    }
+
+    setFbBusy(true);
+    try {
+      await submitFeedback({
+        topic_id: numericGameId,
+        rating: fbForm.rating,
+        category: fbForm.category,
+        message: fbForm.message.trim(),
+      });
+
+      alert("✅ Feedback submitted. Thank you!");
+      setFbForm((p) => ({ ...p, message: "" }));
+      await loadMyFeedback();
+    } catch (err) {
+      alert(err?.response?.data?.detail || "Failed to submit feedback.");
+    } finally {
+      setFbBusy(false);
+    }
+  };
+
+  // auto-load feedback when tab is opened
+  useEffect(() => {
+    if (mode === "feedback" && !fbLoaded) {
+      loadMyFeedback();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, fbLoaded]);
+
+  
 
   // ----- derived values & narration ----- //
 
@@ -2401,7 +2473,93 @@ export default function Game() {
             >
               🎯 Quiz Challenge
             </button>
+
+            <button
+              type="button"
+              className={`mode-btn ${mode === "feedback" ? "active" : ""}`}
+              onClick={() => setMode("feedback")}
+            >
+              📝 Feedback
+            </button>
+
           </div>
+
+          {mode === "feedback" && (
+            // If you want Feedback ONLY for topic 4:
+             numericGameId !== 4 ? <p>Feedback is available for Topic 4 only.</p> :
+            <div className="feedback-wrapper">
+              <h2 className="feedback-title">📝 Feedback (Topic {numericGameId})</h2>
+              <p className="feedback-sub">
+                Report issues, suggest improvements, or share ideas about this topic.
+              </p>          
+
+              <form className="feedback-form" onSubmit={handleSubmitFeedback}>
+                <div className="feedback-row">
+                  <label>Category</label>
+                  <select
+                    value={fbForm.category}
+                    onChange={(e) => setFbForm({ ...fbForm, category: e.target.value })}
+                  >
+                    <option value="bug">🐛 Bug</option>
+                    <option value="suggestion">💡 Suggestion</option>
+                    <option value="content">📚 Lesson Content</option>
+                    <option value="other">📝 Other</option>
+                  </select>
+                </div>          
+
+                <div className="feedback-row">
+                  <label>Rating</label>
+                  <select
+                    value={fbForm.rating}
+                    onChange={(e) => setFbForm({ ...fbForm, rating: Number(e.target.value) })}
+                  >
+                    <option value={5}>⭐⭐⭐⭐⭐</option>
+                    <option value={4}>⭐⭐⭐⭐</option>
+                    <option value={3}>⭐⭐⭐</option>
+                    <option value={2}>⭐⭐</option>
+                    <option value={1}>⭐</option>
+                  </select>
+                </div>          
+
+                <div className="feedback-row">
+                  <label>Your Feedback</label>
+                  <textarea
+                    rows={6}
+                    value={fbForm.message}
+                    onChange={(e) => setFbForm({ ...fbForm, message: e.target.value })}
+                    placeholder="What should we improve? What issue did you experience?"
+                  />
+                </div>          
+
+                <button className="feedback-submit" type="submit" disabled={fbBusy}>
+                  {fbBusy ? "Submitting..." : "Submit Feedback ✅"}
+                </button>
+              </form>         
+
+              <div className="feedback-history">
+                <h3>📌 My Previous Feedback</h3>          
+
+                {!fbLoaded ? (
+                  <p>Loading...</p>
+                ) : fbList.length === 0 ? (
+                  <p style={{ opacity: 0.75 }}>No feedback yet.</p>
+                ) : (
+                  fbList.map((f) => (
+                    <div key={f.id} className="feedback-item">
+                      <div className="feedback-meta">
+                        <span>📂 {f.category}</span>
+                        <span>⭐ {f.rating ?? "-"}</span>
+                        <span>{new Date(f.created_at).toLocaleString()}</span>
+                        <span>{f.is_resolved ? "✅ Resolved" : "🕒 Pending"}</span>
+                      </div>
+                      <div className="feedback-msg">{f.message}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
 
 
           {/* LESSON MODE: gamified lesson flow */}
@@ -2409,19 +2567,17 @@ export default function Game() {
             //DITO    
             <div className="lesson-wrapper">
              
-               <div className="lesson-video">
-                 <video
-                   controls
-                   playsInline
-                   preload="metadata"
-                   controlsList="nodownload"
-                   className="lesson-video-player"
-                 >
-                   <source src={lessonVideo1} type="video/mp4" />
-                   Your browser does not support the video tag.
-                 </video>
-               </div>
-
+             <div className="lesson-video">
+              <video
+                ref={videoRef}
+                className="lesson-video-player"
+                controls
+                playsInline
+                preload="metadata"
+              >
+                <source src={lessonVideo1} type="video/mp4" />
+              </video>
+            </div>
 
 
                {LESSON_INTRO[numericGameId] && (

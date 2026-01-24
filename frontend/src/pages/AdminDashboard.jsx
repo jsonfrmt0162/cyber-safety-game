@@ -36,24 +36,49 @@ export default function AdminDashboard() {
     is_admin: false,
   });
 
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [feedbackBusyId, setFeedbackBusyId] = useState(null);
+
+
   const navigate = useNavigate();
 
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [statsRes, usersRes, suspiciousRes] = await Promise.all([
+      const [statsRes, usersRes, suspiciousRes, feedbackRes] = await Promise.all([
         api.get("/admin/stats"),
         api.get("/admin/users"),
         api.get("/admin/users/suspicious").catch(() => ({ data: [] })),
+        api.get("/feedback/admin").catch(() => ({ data: [] })),
       ]);
 
       setStats(statsRes.data);
       setUsers(usersRes.data);
       setSuspiciousUsers(suspiciousRes.data || []);
+      setFeedbacks(feedbackRes.data || []);
     } finally {
       setLoading(false);
     }
+    
+
   };
+
+  const resolveFeedback = async (feedbackId) => {
+    const ok = window.confirm("Mark this feedback as resolved?");
+    if (!ok) return;
+  
+    setFeedbackBusyId(feedbackId);
+    try {
+      await api.post(`/feedback/admin/${feedbackId}/resolve`);
+      alert("✅ Resolved feedback. ")
+      await fetchAll(); // refresh list
+    } catch (e) {
+      alert(e?.response?.data?.detail || "Failed to resolve feedback");
+    } finally {
+      setFeedbackBusyId(null);
+    }
+  };
+  
 
   const fetchProgress = async (user) => {
     setSelectedUser(user);
@@ -543,6 +568,57 @@ export default function AdminDashboard() {
             </div>
           )}
         </section>
+
+        <section className="admin-panel" style={{ marginTop: 16 }}>
+          <h2 className="admin-panel-title">📝 Feedback</h2>
+
+          {feedbacks.length === 0 ? (
+            <p style={{ opacity: 0.8 }}>No feedback submitted yet.</p>
+          ) : (
+            <div className="admin-table">
+              <div className="admin-row admin-head">
+                <div>ID</div>
+                <div>User</div>
+                <div>Topic</div>
+                <div>Category</div>
+                <div>Rating</div>
+                <div>Status</div>
+                <div>Action</div>
+              </div>
+        
+              {feedbacks.map((f) => (
+                <div key={f.id} className="admin-row">
+                  <div>{f.id}</div>
+                  <div>{f.username || f.user_id}</div>
+                  <div>{f.topic_id}</div>
+                  <div>{f.category || "-"}</div>
+                  <div>{f.rating ?? "-"}</div>
+            
+                  <div style={{ fontWeight: 900 }}>
+                    {f.is_resolved ? "✅ Resolved" : "🕒 Pending"}
+                  </div>
+            
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {!f.is_resolved ? (
+                      <button
+                        className="admin-btn"
+                        disabled={feedbackBusyId === f.id}
+                        onClick={() => resolveFeedback(f.id)}
+                      >
+                        {feedbackBusyId === f.id ? "Resolving..." : "✅ Resolve"}
+                      </button>
+                    ) : (
+                      <button className="admin-btn" disabled>
+                        Resolved
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
       </div>
     </div>
   );
