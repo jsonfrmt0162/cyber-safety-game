@@ -1,6 +1,7 @@
 # app/models.py
-from sqlalchemy import Column, Integer, String, Date, ForeignKey, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, Boolean, DateTime, Text
 from sqlalchemy.orm import relationship
+from sqlalchemy import func
 from .database import Base
 
 
@@ -51,3 +52,18 @@ class Score(Base):
 
     user = relationship("User", back_populates="scores")
     game = relationship("Game", back_populates="scores")
+
+class Feedback(Base):
+    __tablename__ = "feedback"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    topic_id = Column(Integer, nullable=False) 
+    rating = Column(Integer, nullable=True)  
+    category = Column(String(50), nullable=True) 
+    message = Column(Text, nullable=False)
+    screenshot_url = Column(String(500), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    is_resolved = Column(Boolean, default=False)
+
