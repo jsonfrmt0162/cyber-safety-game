@@ -58,3 +58,6 @@ export const getAllFeedback = () =>
 // mark feedback as resolved (admin only)
 export const resolveFeedback = (feedbackId) =>
   api.post(`/feedback/admin/${feedbackId}/resolve`)
+
+export const adminUpdateUser = (userId, payload) =>
+api.patch(`/admin/users/${userId}`, payload);

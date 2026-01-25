@@ -1,5 +1,5 @@
 # app/schemas.py
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import date, datetime
 from typing import Optional, List
 
@@ -96,3 +96,8 @@ class FeedbackOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class AdminUserUpdate(BaseModel):
+    username: Optional[str] = Field(default=None, min_length=3, max_length=50)
+    password: Optional[str] = Field(default=None, min_length=6, max_length=128)
+    

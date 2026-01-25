@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { api, adminCreateUser } from "../services/api"; // ✅ import both from same file
+import { api, adminCreateUser, adminUpdateUser } from "../services/api"; 
 import "../styles/AdminDashboard.css";
 import { useNavigate } from "react-router-dom";
 
@@ -39,6 +39,30 @@ export default function AdminDashboard() {
   const [feedbacks, setFeedbacks] = useState([]);
   const [feedbackBusyId, setFeedbackBusyId] = useState(null);
 
+  const [showEdit, setShowEdit] = useState(false);
+  const [editBusy, setEditBusy] = useState(false);
+  const [editUser, setEditUser] = useState(null);
+  
+  const [editForm, setEditForm] = useState({
+    username: "",
+    password: "", 
+  });
+
+  const openEditModal = (u) => {
+    setEditUser(u);
+    setEditForm({
+      username: u.username || "",
+      password: "",
+    });
+    setShowEdit(true);
+  };
+  
+  const closeEditModal = () => {
+    if (editBusy) return;
+    setShowEdit(false);
+    setEditUser(null);
+  };
+  
 
   const navigate = useNavigate();
 
@@ -79,7 +103,36 @@ export default function AdminDashboard() {
     }
   };
   
-
+  const handleEditUser = async (e) => {
+    e.preventDefault();
+    if (!editUser) return;
+  
+    const payload = {};
+    if (editForm.username !== editUser.username) {
+      payload.username = editForm.username;
+    }
+    if (editForm.password.trim()) {
+      payload.password = editForm.password;
+    }
+  
+    if (Object.keys(payload).length === 0) {
+      alert("No changes made");
+      return;
+    }
+  
+    setEditBusy(true);
+    try {
+      await adminUpdateUser(editUser.id, payload);
+      alert("✅ User updated");
+      setShowEdit(false);
+      await fetchAll();
+    } catch (err) {
+      alert(err?.response?.data?.detail || "Failed to update user");
+    } finally {
+      setEditBusy(false);
+    }
+  };
+  
   const fetchProgress = async (user) => {
     setSelectedUser(user);
     setProgress(null);
@@ -367,6 +420,58 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {showEdit && editUser && (
+        <div className="admin-modal-backdrop" onClick={closeEditModal}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+              <h2 className="admin-panel-title" style={{ marginBottom: 6 }}>
+                ✏ Edit User (ID: {editUser.id})
+              </h2>
+              <button
+                type="button"
+                className="admin-btn ghost"
+                onClick={closeEditModal}
+                disabled={editBusy}
+              >
+                ✖
+              </button>
+            </div>
+      
+            <form onSubmit={handleEditUser} className="admin-modal-form">
+              <input
+                placeholder="Username"
+                value={editForm.username}
+                onChange={(e) => setEditForm((p) => ({ ...p, username: e.target.value }))}
+                required
+              />
+      
+              <input
+                placeholder="New Password (leave blank to keep)"
+                type="password"
+                value={editForm.password}
+                onChange={(e) => setEditForm((p) => ({ ...p, password: e.target.value }))}
+              />
+      
+              <div className="admin-modal-actions">
+                <button
+                  type="button"
+                  className="admin-btn ghost"
+                  onClick={closeEditModal}
+                  disabled={editBusy}
+                >
+                  Cancel
+                </button>
+      
+                <button type="submit" className="admin-btn" disabled={editBusy}>
+                  {editBusy ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+
       {/* Optional: suspicious panel */}
       {suspiciousUsers?.length > 0 && (
         <div className="admin-panel" style={{ marginTop: 16 }}>
@@ -495,6 +600,10 @@ export default function AdminDashboard() {
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <button className="admin-btn" onClick={() => fetchProgress(u)}>
                       View Progress
+                    </button>
+
+                    <button className="admin-btn" onClick={() => openEditModal(u)}>
+                    ✏ Edit
                     </button>
 
                     {!u.is_admin && !u.is_blocked && (

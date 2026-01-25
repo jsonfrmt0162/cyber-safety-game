@@ -6,7 +6,7 @@ from datetime import datetime
 from app.database import get_db
 from app import models, schemas
 from app.deps import require_admin
-from app.auth import hash_password
+from app.schemas import AdminUserUpdate
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -164,4 +164,30 @@ def admin_create_user(
         "birthday": str(new_user.birthday),
         "is_blocked": bool(getattr(new_user, "is_blocked", False)),
         "blocked_reason": getattr(new_user, "blocked_reason", None),
+    }
+
+@router.patch("/users/{user_id}")
+def admin_update_user(
+    user_id: int,
+    payload: AdminUserUpdate,
+    db: Session = Depends(get_db),
+    _=Depends(require_admin),
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if payload.username is not None:
+        user.username = payload.username.strip()
+
+    if payload.password is not None and payload.password.strip():
+        user.password = payload.password  
+
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "message": "User updated successfully",
+        "id": user.id,
+        "username": user.username,
     }
