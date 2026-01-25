@@ -126,8 +126,19 @@ export default function AdminDashboard() {
       alert("✅ User updated");
       setShowEdit(false);
       await fetchAll();
-    } catch (err) {
-      alert(err?.response?.data?.detail || "Failed to update user");
+    } catch (e) {
+        const detail = e?.response?.data?.detail;
+      
+        if (Array.isArray(detail)) {
+          const msg = detail
+            .map((d) => `${d.loc?.join(".")}: ${d.msg}`)
+            .join("\n");
+          alert(msg);
+        } else if (typeof detail === "string") {
+          alert(detail);
+        } else {
+          alert(e?.response?.data?.message || e?.message || "Request failed");
+        }
     } finally {
       setEditBusy(false);
     }
