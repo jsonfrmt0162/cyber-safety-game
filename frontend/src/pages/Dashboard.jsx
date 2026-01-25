@@ -367,12 +367,15 @@ const quizProgress = useMemo(() => {
           >
             Glossary 📚
           </button>
-          <button className="logout-button" onClick={handleLogout}>
-            Logout ➜]
-          </button>
+          
           <button className="ghost-button" type="button" onClick={() => setShowAccount(true)}>
             ⚙️ Account
           </button>
+
+          <button className="logout-button" onClick={handleLogout}>
+            Logout ➜]
+          </button>
+  
         </div>
       </header>
 
@@ -596,12 +599,12 @@ const quizProgress = useMemo(() => {
                 <h3 className="acct-title">👤 Account Settings</h3>
                 <p className="acct-subtitle">Change your username or password.</p>
               </div>
-            
+
               <button className="acct-close" onClick={closeAccount} disabled={acctBusy}>
                 ✖
               </button>
             </div>
-            
+
             {acctNotice && (
               <div className={`acct-notice ${acctNotice.type}`}>
                 <div className="acct-notice-icon">
@@ -620,7 +623,7 @@ const quizProgress = useMemo(() => {
                 </button>
               </div>
             )}
-      
+
             <form className="acct-form" onSubmit={submitAccount}>
               <div className="acct-field">
                 <label>Username</label>
