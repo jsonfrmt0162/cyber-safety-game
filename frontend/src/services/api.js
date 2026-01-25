@@ -61,3 +61,6 @@ export const resolveFeedback = (feedbackId) =>
 
 export const adminUpdateUser = (userId, payload) =>
 api.patch(`/admin/users/${userId}`, payload);
+
+export const apiChangeMyPassword = (payload) =>
+  api.patch("/users/me/password", payload);

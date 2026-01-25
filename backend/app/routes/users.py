@@ -1,9 +1,14 @@
 # app/routes/users.py
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from pydantic import BaseModel, Field
+from app.database import get_db
+from app.deps import get_current_user
+
 from app import schemas, models, database
 from app.auth import hash_password, verify_password, create_access_token
 from datetime import datetime
+from app.schemas import ChangePasswordIn
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -69,3 +74,23 @@ def login(
         "username": user.username,
         "is_admin": user.is_admin,
     }
+
+@router.patch("/me/password")
+def change_my_password(
+    data: ChangePasswordIn,
+    db: Session = Depends(get_db),
+    user = Depends(get_current_user),
+):
+    db_user = db.query(models.User).filter(models.User.id == user.id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Validate old password
+    if db_user.password != data.current_password:
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    # Update
+    db_user.password = data.new_password
+    db.commit()
+
+    return {"message": "Password updated"}
