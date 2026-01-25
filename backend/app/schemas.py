@@ -104,3 +104,8 @@ class AdminUserUpdate(BaseModel):
 class ChangePasswordIn(BaseModel):
     current_password: str = Field(min_length=1)
     new_password: str = Field(min_length=8)
+
+class AccountUpdate(BaseModel):
+    username: Optional[str] = Field(default=None, min_length=3, max_length=30)
+    current_password: str = Field(min_length=3, max_length=200) 
+    new_password: Optional[str] = Field(default=None, min_length=3, max_length=200)

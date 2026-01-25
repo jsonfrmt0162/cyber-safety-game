@@ -10,7 +10,7 @@ import {
   getGlobalLeaderboard,
   getGames,
   getUserProgress,
-  apiChangeMyPassword
+  updateMyAccount 
 } from "../services/api";
 import { useNavigate } from "react-router-dom";
 
@@ -173,98 +173,83 @@ export default function Dashboard() {
     fetchData();
   }, [navigate]);
 
-  const [pwForm, setPwForm] = useState({
+
+const [acctBusy, setAcctBusy] = useState(false);
+const [acctForm, setAcctForm] = useState({
+  username: "",
+  current_password: "",
+  new_password: "",
+});
+const [acctNotice, setAcctNotice] = useState(null); 
+// { type: "success"|"error"|"info", title: "", msg: "" }
+
+const openAccount = () => {
+  setAcctNotice(null);
+  setAcctForm({
+    username: user?.username || "",
     current_password: "",
     new_password: "",
-    confirm_password: "",
   });
-  
-  const [pwBusy, setPwBusy] = useState(false);
-  
-  // toast UI inside modal
-  const [pwNotice, setPwNotice] = useState({
-    open: false,
-    type: "success", // success | error | info
-    title: "",
-    message: "",
-  });
-  
-  const openNotice = (type, title, message) => {
-    setPwNotice({ open: true, type, title, message });
-  };
-  
-  const closeNotice = () => {
-    setPwNotice((p) => ({ ...p, open: false }));
-  };
-  
-  const parseFastApiError = (err) => {
+  setShowAccount(true);
+};
+
+const closeAccount = () => {
+  if (acctBusy) return;
+  setShowAccount(false);
+};
+
+const submitAccount = async (e) => {
+  e.preventDefault();
+  setAcctNotice(null);
+
+  if (!acctForm.current_password) {
+    setAcctNotice({
+      type: "error",
+      title: "Missing current password",
+      msg: "Please type your current password to confirm changes.",
+    });
+    return;
+  }
+
+  setAcctBusy(true);
+  try {
+    const payload = {
+      username: acctForm.username?.trim() || null,
+      current_password: acctForm.current_password,
+      new_password: acctForm.new_password ? acctForm.new_password : null,
+    };
+
+    const res = await updateMyAccount(payload);
+
+    // update UI immediately
+    setUser((p) => ({ ...p, username: res.data.username }));
+    localStorage.setItem("username", res.data.username);
+
+    setAcctForm((p) => ({ ...p, current_password: "", new_password: "" }));
+
+    setAcctNotice({
+      type: "success",
+      title: "Saved!",
+      msg: "Your account details were updated successfully.",
+    });
+  } catch (err) {
     const detail = err?.response?.data?.detail;
-  
-    // Pydantic validation errors list
-    if (Array.isArray(detail)) {
-      return detail
-        .map((d) => {
-          const loc = (d.loc || []).slice(1).join("."); // remove "body"
-          return `${loc || "field"}: ${d.msg}`;
-        })
-        .join("\n");
-    }
-  
-    if (typeof detail === "string") return detail;
-    if (err?.message) return err.message;
-    return "Something went wrong. Please try again.";
-  };
-  
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-  
-    closeNotice();
-  
-    if (!pwForm.current_password || !pwForm.new_password) {
-      openNotice("error", "Missing info", "Please fill in all password fields.");
-      return;
-    }
-  
-    if (pwForm.new_password.length < 8) {
-      openNotice("error", "Password too short", "New password must be at least 8 characters.");
-      return;
-    }
-  
-    if (pwForm.new_password !== pwForm.confirm_password) {
-      openNotice("error", "Passwords don’t match", "New password and Confirm password must match.");
-      return;
-    }
-  
-    if (pwForm.current_password === pwForm.new_password) {
-      openNotice("info", "Same password", "Your new password must be different from your current password.");
-      return;
-    }
-  
-    setPwBusy(true);
-    try {
-      await apiChangeMyPassword({
-        current_password: pwForm.current_password,
-        new_password: pwForm.new_password,
-      });
-  
-      openNotice(
-        "success",
-        "Password updated ✅",
-        "Nice! Your password was changed successfully. Use your new password next time you log in."
-      );
-  
-      setPwForm({ current_password: "", new_password: "", confirm_password: "" });
-  
-      setTimeout(() => {
-        setShowAccount(false);
-        closeNotice();
-      }, 1600);
-    } catch (err) {
-      openNotice("error", "Update failed", parseFastApiError(err));
-    } finally {
-      setPwBusy(false);
-    }
-  };
+    const msg =
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+        ? detail.map((d) => d?.msg).filter(Boolean).join("\n")
+        : "Update failed. Please try again.";
+
+    setAcctNotice({
+      type: "error",
+      title: "Update failed",
+      msg,
+    });
+  } finally {
+    setAcctBusy(false);
+  }
+};
   
 
 const quizGames = games.filter((g) => g.is_quiz);       // only 4 topics
@@ -604,108 +589,87 @@ const quizProgress = useMemo(() => {
       </section>
 
       {showAccount && (
-        <div
-          className="acct-backdrop"
-          onClick={() => {
-            if (!pwBusy) setShowAccount(false);
-          }}
-        >
+        <div className="acct-backdrop" onClick={closeAccount}>
           <div className="acct-modal" onClick={(e) => e.stopPropagation()}>
             <div className="acct-header">
               <div>
-                <h2 className="acct-title">⚙️ Account Settings</h2>
-                <p className="acct-subtitle">Update your password anytime.</p>
+                <h3 className="acct-title">👤 Account Settings</h3>
+                <p className="acct-subtitle">Change your username or password.</p>
               </div>
-        
-              <button
-                type="button"
-                className="acct-close"
-                disabled={pwBusy}
-                onClick={() => setShowAccount(false)}
-                aria-label="Close"
-              >
+            
+              <button className="acct-close" onClick={closeAccount} disabled={acctBusy}>
                 ✖
               </button>
             </div>
-        
-            {/* Notice banner */}
-            {pwNotice.open && (
-              <div className={`acct-notice ${pwNotice.type}`}>
+            
+            {acctNotice && (
+              <div className={`acct-notice ${acctNotice.type}`}>
                 <div className="acct-notice-icon">
-                  {pwNotice.type === "success" ? "✅" : pwNotice.type === "error" ? "⚠️" : "ℹ️"}
+                  {acctNotice.type === "success" ? "✅" : acctNotice.type === "error" ? "⚠️" : "ℹ️"}
                 </div>
             
-                <div className="acct-notice-body">
-                  <div className="acct-notice-title">{pwNotice.title}</div>
+                <div>
+                  <div className="acct-notice-title">{acctNotice.title}</div>
                   <div className="acct-notice-msg" style={{ whiteSpace: "pre-line" }}>
-                    {pwNotice.message}
+                    {acctNotice.msg}
                   </div>
                 </div>
             
-                <button type="button" className="acct-notice-x" onClick={closeNotice}>
-                  ✖
+                <button className="acct-notice-x" onClick={() => setAcctNotice(null)}>
+                  ✕
                 </button>
               </div>
             )}
-
-            <form className="acct-form" onSubmit={handleChangePassword}>
+      
+            <form className="acct-form" onSubmit={submitAccount}>
               <div className="acct-field">
-                <label>Current Password</label>
+                <label>Username</label>
                 <input
-                  type="password"
-                  placeholder="Enter current password"
-                  value={pwForm.current_password}
-                  onChange={(e) => setPwForm((p) => ({ ...p, current_password: e.target.value }))}
-                  disabled={pwBusy}
-                  required
+                  value={acctForm.username}
+                  onChange={(e) => setAcctForm((p) => ({ ...p, username: e.target.value }))}
+                  placeholder="Your username"
+                  minLength={3}
+                  maxLength={30}
                 />
+                <div className="acct-hint">This will be shown in the leaderboard.</div>
               </div>
             
               <div className="acct-field">
-                <label>New Password</label>
+                <label>Current Password (required)</label>
                 <input
                   type="password"
-                  placeholder="Enter new password"
-                  value={pwForm.new_password}
-                  onChange={(e) => setPwForm((p) => ({ ...p, new_password: e.target.value }))}
-                  disabled={pwBusy}
+                  value={acctForm.current_password}
+                  onChange={(e) =>
+                    setAcctForm((p) => ({ ...p, current_password: e.target.value }))
+                  }
+                  placeholder="Enter your current password"
                   required
                 />
-                <div className="acct-hint">Must be at least 8 characters.</div>
               </div>
-            
+                
               <div className="acct-field">
-                <label>Confirm New Password</label>
+                <label>New Password (optional)</label>
                 <input
                   type="password"
-                  placeholder="Re-enter new password"
-                  value={pwForm.confirm_password}
-                  onChange={(e) => setPwForm((p) => ({ ...p, confirm_password: e.target.value }))}
-                  disabled={pwBusy}
-                  required
+                  value={acctForm.new_password}
+                  onChange={(e) => setAcctForm((p) => ({ ...p, new_password: e.target.value }))}
+                  placeholder="Leave blank to keep your password"
                 />
+                <div className="acct-hint">Tip: use at least 6 characters.</div>
               </div>
-            
+                
               <div className="acct-actions">
-                <button
-                  type="button"
-                  className="acct-btn ghost"
-                  disabled={pwBusy}
-                  onClick={() => setShowAccount(false)}
-                >
+                <button type="button" className="acct-btn ghost" onClick={closeAccount} disabled={acctBusy}>
                   Cancel
                 </button>
-            
-                <button type="submit" className="acct-btn primary" disabled={pwBusy}>
-                  {pwBusy ? (
+                
+                <button type="submit" className="acct-btn primary" disabled={acctBusy}>
+                  {acctBusy ? (
                     <span className="acct-loading">
-                      <span className="dot" />
-                      <span className="dot" />
-                      <span className="dot" />
-                      Saving…
+                      Saving <span className="dot" /> <span className="dot" /> <span className="dot" />
                     </span>
                   ) : (
-                    "Update Password"
+                    "Save Changes"
                   )}
                 </button>
               </div>
@@ -713,6 +677,7 @@ const quizProgress = useMemo(() => {
           </div>
         </div>
       )}
+
 
     </div>
   );

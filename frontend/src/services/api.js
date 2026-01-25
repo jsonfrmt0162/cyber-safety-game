@@ -64,3 +64,6 @@ api.patch(`/admin/users/${userId}`, payload);
 
 export const apiChangeMyPassword = (payload) =>
   api.patch("/users/me/password", payload);
+
+export const updateMyAccount = (payload) => 
+  api.patch("/account", payload);
