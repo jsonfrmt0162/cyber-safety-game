@@ -1,9 +1,5 @@
 /* ============================================================
    AdminDashboard.css — PRO / BEAUTIFUL ADMIN UI (CSS-only)
-   Fixes the “ugly/stacked header” issue by using:
-   .admin-row { grid-auto-flow: column; grid-auto-columns: ... }
-   so ANY table (Users / Suspicious / Feedback) aligns correctly
-   without adding extra wrapper classes in JSX.
    ============================================================ */
 
    :root{
@@ -34,7 +30,7 @@
   }
   
   /* ----------------------------
-     PAGE BACKGROUND (clean + soft)
+     PAGE BACKGROUND
   ----------------------------- */
   .admin-page{
     min-height:100vh;
@@ -72,19 +68,36 @@
   }
   
   /* ----------------------------
-     HEADER (more balanced)
+     HEADER (sticky + premium)
   ----------------------------- */
   .admin-header{
     display:flex;
     align-items:center;
     justify-content: space-between;
     gap: 14px;
-    margin-bottom: 18px;
+  
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  
+    padding: 14px 14px;
+    border-radius: 18px;
+    margin-bottom: 16px;
+  
+    border: 1px solid rgba(226,232,240,0.10);
+    background: rgba(2,6,23,0.42);
+    backdrop-filter: blur(16px);
   }
   
   .admin-header > div:nth-child(2){
     flex: 1;
     min-width: 0;
+  }
+  
+  .admin-header-actions{
+    display:flex;
+    gap: 10px;
+    flex-wrap: wrap;
   }
   
   .admin-title{
@@ -100,6 +113,14 @@
     color: var(--muted);
   }
   
+  .admin-muted{
+    opacity: 0.85;
+    margin-top: -6px;
+  }
+  
+  /* ----------------------------
+     TOP BUTTONS
+  ----------------------------- */
   .admin-back,
   .admin-refresh{
     border: 1px solid var(--stroke2);
@@ -123,7 +144,7 @@
   }
   
   /* ----------------------------
-     STATS CARDS (cleaner)
+     STATS CARDS
   ----------------------------- */
   .admin-cards{
     display:grid;
@@ -162,7 +183,7 @@
   }
   
   /* ----------------------------
-     PANELS (less “boxy”)
+     PANELS
   ----------------------------- */
   .admin-panel{
     border: 1px solid var(--stroke);
@@ -189,8 +210,32 @@
   }
   
   /* ----------------------------
-     INPUT + SELECT (remove “white box” look)
+     FILTER BAR
   ----------------------------- */
+  .admin-filters{
+    display:flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  
+    padding: 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(226,232,240,0.10);
+    background: rgba(2,6,23,0.22);
+  }
+  
+  .admin-filters input{
+    flex: 1;
+    min-width: 240px;
+    padding: 10px 12px;
+  }
+  
+  .admin-filters select{
+    padding: 10px 12px;
+    font-weight: 800;
+  }
+  
+  /* Inputs theme */
   .admin-panel input,
   .admin-panel select{
     background: rgba(2,6,23,0.35) !important;
@@ -208,8 +253,7 @@
   }
   
   /* ----------------------------
-     TABLE (THIS FIXES YOUR UGLY STACKING)
-     - Any number of columns will align automatically.
+     TABLE BASE
   ----------------------------- */
   .admin-table{
     width:100%;
@@ -219,39 +263,42 @@
   
   .admin-row{
     display:grid;
-    grid-auto-flow: column;                      /* children become columns */
-    grid-auto-columns: minmax(120px, 1fr);       /* consistent column sizing */
     gap: 12px;
     align-items: center;
   
     padding: 12px 14px;
     border-radius: var(--r18);
     border: 1px solid rgba(226,232,240,0.10);
-    background: rgba(2,6,23,0.26);
     box-shadow: 0 10px 24px rgba(0,0,0,0.20);
     transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
     overflow: hidden;
   }
   
-  .admin-row > div,
-  .cell{
-    min-width: 0; /* critical for wrapping */
+  .admin-row > div{
+    min-width: 0;
   }
   
   .admin-row:hover{
     transform: translateY(-1px);
-    border-color: rgba(226,232,240,0.18);
-    background: rgba(2,6,23,0.34);
-    box-shadow: 0 16px 34px rgba(0,0,0,0.24);
+    border-color: rgba(98,174,218,0.28);
+    box-shadow: 0 18px 36px rgba(0,0,0,0.28);
   }
   
   .admin-head{
     font-weight: 950;
-    background: rgba(2,6,23,0.54);
+    background: rgba(2,6,23,0.54) !important;
     border-color: rgba(226,232,240,0.14);
   }
   
-  /* Make “Email” look nice and not overflow */
+  /* Zebra */
+  .admin-table .admin-row:nth-child(even):not(.admin-head){
+    background: rgba(2,6,23,0.22);
+  }
+  .admin-table .admin-row:nth-child(odd):not(.admin-head){
+    background: rgba(2,6,23,0.30);
+  }
+  
+  /* Email */
   .admin-email{
     font-size: 13px;
     color: rgba(226,232,240,0.84);
@@ -259,13 +306,31 @@
     word-break: break-word;
   }
   
-  /* Status cells (Active/Blocked) */
-  .admin-row span{
-    line-height: 1.2;
+  /* Actions alignment */
+  .actions{
+    display:flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
   
   /* ----------------------------
-     BUTTONS (pro)
+     TABLE COLUMN LAYOUTS (IMPORTANT!)
+  ----------------------------- */
+  .table-users .admin-row{
+    grid-template-columns: 70px 1.1fr 1.6fr 0.7fr 0.9fr 1.6fr;
+  }
+  
+  .table-suspicious .admin-row{
+    grid-template-columns: 70px 1.2fr 1.7fr 0.8fr 1.5fr;
+  }
+  
+  .table-feedback .admin-row{
+    grid-template-columns: 70px 1.1fr 0.9fr 0.9fr 2.3fr 0.9fr 1.0fr 1.1fr;
+  }
+  
+  /* ----------------------------
+     BUTTONS (hierarchy)
   ----------------------------- */
   .admin-btn{
     border: 1px solid rgba(226,232,240,0.12);
@@ -293,6 +358,15 @@
     box-shadow: none;
   }
   
+  /* Subtle */
+  .admin-btn.subtle{
+    background: rgba(148,163,184,0.12);
+    color: var(--text);
+    border: 1px solid rgba(226,232,240,0.16);
+    box-shadow: none;
+  }
+  
+  /* Ghost (for modal close/cancel) */
   .admin-btn.ghost{
     background: rgba(148,163,184,0.12);
     color: var(--text);
@@ -300,129 +374,158 @@
     box-shadow: none;
   }
   
-  /* ----------------------------
-     FEEDBACK (comment layout + read more)
-  ----------------------------- */
-  /* =========================================
-   FEEDBACK COMMENT — CLEAN ADMIN STYLE
-   ========================================= */
-
-/* Container alignment fix */
-.feedback-table .admin-row,
-.admin-row {
-  align-items: center;
-}
-
-/* Comment box (no tooltip look) */
-.comment-text {
-  margin: 0;
-  padding: 12px 14px;
-
-  background: linear-gradient(
-    180deg,
-    rgba(15, 23, 42, 0.75),
-    rgba(15, 23, 42, 0.55)
-  );
-
-  border: 1px solid rgba(226, 232, 240, 0.14);
-  border-radius: 14px;
-
-  color: rgba(226, 232, 240, 0.95);
-  font-size: 14px;
-  line-height: 1.5;
-
-  /* proper wrapping */
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-
-  /* clamp */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;     /* 👈 cleaner than 3 */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-/* Hover polish */
-.comment-text:hover {
-  border-color: rgba(98, 174, 218, 0.35);
-  background: rgba(15, 23, 42, 0.75);
-}
-
-/* Expanded state */
-.comment-text.expanded {
-  -webkit-line-clamp: unset;
-  overflow: visible;
-}
-
-/* REMOVE tooltip arrow look */
-.comment-text::before {
-  display: none !important;
-}
-
-/* Read more button — subtle admin link */
-.link-btn {
-  margin-top: 6px;
-  padding: 4px 10px;
-
-  border-radius: 999px;
-  border: 1px solid rgba(98, 174, 218, 0.25);
-
-  background: rgba(98, 174, 218, 0.08);
-  color: rgba(226, 232, 240, 0.9);
-
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.link-btn:hover {
-  background: rgba(98, 174, 218, 0.16);
-  border-color: rgba(98, 174, 218, 0.45);
-}
-
-/* Stars alignment fix */
-.stars {
-  font-size: 15px;
-  letter-spacing: 2px;
-  white-space: nowrap;
-}
-
-/* Status chip alignment */
-.chip-pending,
-.chip-done {
-  font-size: 13px;
-  padding: 6px 12px;
-}
-
-/* Action button alignment */
-.admin-row .admin-btn {
-  min-width: 110px;
-  justify-content: center;
-}
-
-  
-  .link-btn{
-    margin-top: 8px;
-    border: 1px solid rgba(98,174,218,0.22);
-
+  /* Danger / Success */
+  .admin-btn.danger{
+    background: linear-gradient(135deg, rgba(239,68,68,0.95), rgba(245,158,11,0.85));
+    color: #0b1020;
   }
   
-  .link-btn:hover{ filter: brightness(1.1); }
+  .admin-btn.success{
+    background: linear-gradient(135deg, rgba(34,197,94,0.95), rgba(98,174,218,0.85));
+    color: #04111c;
+  }
+  
+  /* ----------------------------
+     CHIPS (status)
+  ----------------------------- */
+  .statusline{
+    display:flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 900;
+    border: 1px solid rgba(226,232,240,0.14);
+    background: rgba(2,6,23,0.30);
+  }
+  
+  .chip-ok{
+    border-color: rgba(34,197,94,0.25);
+    background: rgba(34,197,94,0.10);
+  }
+  
+  .chip-danger{
+    border-color: rgba(239,68,68,0.25);
+    background: rgba(239,68,68,0.10);
+  }
+  
+  .chip-warn{
+    border-color: rgba(245,158,11,0.25);
+    background: rgba(245,158,11,0.10);
+  }
+  
+  .chip-user{
+    border-color: rgba(98,174,218,0.25);
+    background: rgba(98,174,218,0.10);
+  }
+  
+  .chip-topic{
+    border-color: rgba(139,92,246,0.25);
+    background: rgba(139,92,246,0.10);
+  }
+  
+  .chip-cat{
+    border-color: rgba(226,232,240,0.14);
+    background: rgba(2,6,23,0.28);
+  }
+  
+  /* Category variants */
+  .chip-cat.bug{ border-color: rgba(239,68,68,0.25); background: rgba(239,68,68,0.10); }
+  .chip-cat.suggestion{ border-color: rgba(34,197,94,0.25); background: rgba(34,197,94,0.10); }
+  .chip-cat.content{ border-color: rgba(98,174,218,0.25); background: rgba(98,174,218,0.10); }
+  .chip-cat.other{ border-color: rgba(226,232,240,0.16); background: rgba(2,6,23,0.24); }
+  
+  .chip-pending{
+    border-color: rgba(245,158,11,0.25);
+    background: rgba(245,158,11,0.10);
+  }
+  
+  .chip-done{
+    border-color: rgba(34,197,94,0.25);
+    background: rgba(34,197,94,0.10);
+  }
+  
+  /* ----------------------------
+     FEEDBACK COMMENT
+  ----------------------------- */
+  .comment{
+    min-width: 0;
+  }
+  
+  .comment-text{
+    margin: 0;
+    padding: 12px 14px;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.55));
+    border: 1px solid rgba(226, 232, 240, 0.14);
+    border-radius: 14px;
+  
+    color: rgba(226, 232, 240, 0.95);
+    font-size: 14px;
+    line-height: 1.5;
+  
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  
+  .comment-text:hover{
+    border-color: rgba(98, 174, 218, 0.35);
+    background: rgba(15, 23, 42, 0.75);
+  }
+  
+  .comment-text.expanded{
+    -webkit-line-clamp: unset;
+    overflow: visible;
+  }
+  
+  .link-btn{
+    margin-top: 6px;
+    padding: 4px 10px;
+  
+    border-radius: 999px;
+    border: 1px solid rgba(98, 174, 218, 0.25);
+    background: rgba(98, 174, 218, 0.08);
+    color: rgba(226, 232, 240, 0.9);
+  
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  
+  .link-btn:hover{
+    background: rgba(98, 174, 218, 0.16);
+    border-color: rgba(98, 174, 218, 0.45);
+  }
   
   .stars{
-    font-size: 16px;
-    letter-spacing: 1px;
+    font-size: 15px;
+    letter-spacing: 2px;
+    white-space: nowrap;
   }
   
   /* ----------------------------
      PROGRESS PANEL
   ----------------------------- */
-  .progress-box{ display:grid; gap: 12px; }
+  .progress-box{
+    display:grid;
+    gap: 12px;
+  }
   
   .progress-user{
     padding: 12px;
@@ -464,7 +567,7 @@
   }
   
   /* ----------------------------
-     MODAL (clean)
+     MODAL
   ----------------------------- */
   .admin-modal-backdrop{
     position: fixed;
@@ -483,6 +586,13 @@
     border: 1px solid rgba(148,163,184,0.22);
     background: rgba(2,6,23,0.82);
     box-shadow: 0 30px 120px rgba(0,0,0,0.55);
+  }
+  
+  .admin-modal-top{
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
   }
   
   .admin-modal-form{
@@ -542,12 +652,15 @@
       grid-template-columns: 1fr;
     }
   
-    /* stack table rows nicely on mobile */
+    /* Stack rows on mobile */
     .admin-row{
-      grid-auto-flow: row;
-      grid-auto-columns: unset;
+      grid-template-columns: 1fr !important;
       gap: 8px;
       align-items: flex-start;
+    }
+  
+    .actions{
+      justify-content: flex-start;
     }
   }
   
