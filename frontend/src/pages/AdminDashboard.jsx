@@ -14,6 +14,9 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [suspiciousUsers, setSuspiciousUsers] = useState([]);
+  const toggleFeedbackExpand = (id) => {
+    setFeedbacks((prev) => prev.map((x) => (x.id === id ? { ...x, __expanded: !x.__expanded } : x)));
+  };
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [progress, setProgress] = useState(null);
@@ -688,57 +691,75 @@ export default function AdminDashboard() {
           )}
         </section>
 
-        <section className="admin-panel" style={{ marginTop: 16 }}>
-          <h2 className="admin-panel-title">📝 Feedback</h2>
-
-          {feedbacks.length === 0 ? (
-            <p style={{ opacity: 0.8 }}>No feedback submitted yet.</p>
-          ) : (
-            <div className="admin-table">
-              <div className="admin-row admin-head">
-                <div>ID</div>
-                <div>User</div>
-                <div>Topic</div>
-                <div>Category</div>
-                <div>Rating</div>
-                <div>Status</div>
-                <div>Action</div>
-              </div>
-        
-              {feedbacks.map((f) => (
-                <div key={f.id} className="admin-row">
-                  <div>{f.id}</div>
-                  <div>{f.username || f.user_id}</div>
-                  <div>{f.topic_id}</div>
-                  <div>{f.category || "-"}</div>
-                  <div>{f.rating ?? "-"}</div>
-            
-                  <div style={{ fontWeight: 900 }}>
-                    {f.is_resolved ? "✅ Resolved" : "🕒 Pending"}
-                  </div>
-            
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {!f.is_resolved ? (
-                      <button
-                        className="admin-btn"
-                        disabled={feedbackBusyId === f.id}
-                        onClick={() => resolveFeedback(f.id)}
-                      >
-                        {feedbackBusyId === f.id ? "Resolving..." : "✅ Resolve"}
-                      </button>
-                    ) : (
-                      <button className="admin-btn" disabled>
-                        Resolved
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+       
 
       </div>
+      <section className="admin-panel" style={{ marginTop: 16 }}>
+          <h2 className="admin-panel-title">📝 Feedback</h2>
+
+          {feedbacks.map((f) => {
+            const comment = (f.message || "-").trim();
+            const canToggle = comment.length > 140; // adjust threshold if you want
+                    
+            return (
+              <div key={f.id} className={`admin-row ${f.is_resolved ? "is-done" : ""}`}>
+                <div className="cell id">{f.id}</div>
+            
+                <div className="cell user">
+                  <span className="chip chip-user">👤 {f.username || `User #${f.user_id}`}</span>
+                </div>
+            
+                <div className="cell topic">
+                  <span className="chip chip-topic">📘 Topic {f.topic_id}</span>
+                </div>
+            
+                <div className="cell category">
+                  <span className={`chip chip-cat ${String(f.category || "other").toLowerCase()}`}>
+                    🏷️ {f.category || "other"}
+                  </span>
+                </div>
+            
+                <div className="cell comment">
+                  <p className={`comment-text ${f.__expanded ? "expanded" : ""}`}>{comment}</p>
+                  {canToggle && (
+                    <button type="button" className="link-btn" onClick={() => toggleFeedbackExpand(f.id)}>
+                      {f.__expanded ? "Show less" : "Read more"}
+                    </button>
+                  )}
+                </div>
+                    
+                <div className="cell rating">
+                  <span className="stars" aria-label={`Rating ${f.rating ?? 0}`}>
+                    {"⭐".repeat(Number(f.rating || 0)) || "—"}
+                  </span>
+                </div>
+                    
+                <div className="cell status">
+                  <span className={`chip ${f.is_resolved ? "chip-done" : "chip-pending"}`}>
+                    {f.is_resolved ? "✅ Resolved" : "⏳ Pending"}
+                  </span>
+                </div>
+                    
+                <div className="cell action">
+                  {!f.is_resolved ? (
+                    <button
+                      className="admin-btn fun"
+                      disabled={feedbackBusyId === f.id}
+                      onClick={() => resolveFeedback(f.id)}
+                    >
+                      {feedbackBusyId === f.id ? "✨ Fixing..." : "✅ Resolve"}
+                    </button>
+                  ) : (
+                    <button className="admin-btn fun" disabled>
+                      🎉 Resolved
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+        </section>
     </div>
   );
 }

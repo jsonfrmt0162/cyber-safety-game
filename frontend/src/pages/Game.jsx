@@ -11,8 +11,25 @@ import {
     SocialMediaJourney2D,
   } from "./TopicJourneyMiniGame";
 import lessonVideo1 from "../assets/video1.mp4";
+import lessonVideo2 from "../assets/video2.mp4";
+import lessonVideo3 from "../assets/video3.mp4";
+import lessonVideo4 from "../assets/video4.mp4";
 
 // -------------------- STATIC CONTENT -------------------- //
+
+const LESSON_VIDEOS = {
+  1: lessonVideo1,
+  2: lessonVideo2,
+  3: lessonVideo3,
+  4: lessonVideo4
+};
+
+const getVideoType = (src) => {
+  if (!src) return "";
+  if (src.endsWith(".mp4")) return "video/mp4";
+  if (src.endsWith(".mov")) return "video/quicktime";
+  return "video/mp4";
+};
 
 
 const OBJECTIVES = {
@@ -2158,6 +2175,9 @@ export default function Game() {
   const lessonSteps = LESSON_FLOW[numericGameId] || [];
   const currentLesson = lessonSteps[lessonIndex] || null;
 
+  const topicId = numericGameId; 
+  const videoSrc = LESSON_VIDEOS[topicId];
+
   const narrationText = useMemo(() => {
     if (!currentQuestion || !questions.length) return "";
     const baseIntro = `CyberQuest.TO quiz. Topic: ${currentQuestion.topic}. Question ${
@@ -2169,6 +2189,13 @@ export default function Game() {
       .join(" ");
     return `${baseIntro} ${questionPart} Here are your choices. ${optionsPart}`;
   }, [currentQuestion, currentIndex, questions.length]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.load();
+    }
+  }, [numericGameId]);
 
   useEffect(() => {
     if (!autoNarrate || !currentQuestion || !narrationText) return;
@@ -2568,15 +2595,23 @@ export default function Game() {
             <div className="lesson-wrapper">
              
              <div className="lesson-video">
-              <video
-                ref={videoRef}
-                className="lesson-video-player"
-                controls
-                playsInline
-                preload="metadata"
-              >
-                <source src={lessonVideo1} type="video/mp4" />
-              </video>
+             {videoSrc ? (
+                <video
+                  ref={videoRef}
+                  key={videoSrc}   
+                  className="lesson-video-player"
+                  controls
+                  playsInline
+                  preload="metadata"
+                >
+                  <source src={videoSrc} type={getVideoType(videoSrc)} />
+                </video>
+              ) : (
+                <div className="no-video-box">
+                  <h3>No video for this topic</h3>
+                  <p>Proceed to the lesson content below.</p>
+                </div>
+              )}
             </div>
 
 

@@ -1,441 +1,449 @@
 /* ============================================================
-   ADMIN DASHBOARD — BEAUTIFUL / ENGAGING GLASS UI (NO JSX CHANGES)
-   Drop-in replacement for AdminDashboard.css
+   AdminDashboard.css — PRO / BEAUTIFUL ADMIN UI (CSS-only)
+   Fixes the “ugly/stacked header” issue by using:
+   .admin-row { grid-auto-flow: column; grid-auto-columns: ... }
+   so ANY table (Users / Suspicious / Feedback) aligns correctly
+   without adding extra wrapper classes in JSX.
    ============================================================ */
 
-   :root {
-    --bg0: #040812;
-    --bg1: #061022;
+   :root{
+    --bg0:#050a14;
+    --bg1:#071225;
   
-    --glass: rgba(10, 18, 36, 0.58);
-    --glass2: rgba(10, 18, 36, 0.42);
+    --panel: rgba(10, 18, 36, 0.62);
+    --panel2: rgba(10, 18, 36, 0.46);
   
-    --stroke: rgba(226, 232, 240, 0.12);
-    --stroke2: rgba(226, 232, 240, 0.18);
+    --stroke: rgba(226,232,240,0.12);
+    --stroke2: rgba(226,232,240,0.18);
   
-    --text: #e2e8f0;
-    --muted: rgba(226, 232, 240, 0.78);
+    --text: #eaf0ff;
+    --muted: rgba(226,232,240,0.78);
   
-    --aqua: #62aeda;
-    --mint: #22c55e;
-    --violet: #8b5cf6;
-    --amber: #f59e0b;
-    --red: #ef4444;
+    --aqua:#62aeda;
+    --mint:#22c55e;
+    --violet:#8b5cf6;
+    --amber:#f59e0b;
+    --red:#ef4444;
   
-    --shadow: 0 20px 55px rgba(0, 0, 0, 0.45);
-    --shadow2: 0 10px 26px rgba(0, 0, 0, 0.30);
+    --shadow: 0 18px 60px rgba(0,0,0,0.45);
+    --shadow2: 0 10px 26px rgba(0,0,0,0.28);
   
+    --r22: 22px;
     --r18: 18px;
     --r14: 14px;
   }
   
   /* ----------------------------
-     PAGE + animated aurora glow
+     PAGE BACKGROUND (clean + soft)
   ----------------------------- */
-  .admin-page {
-    min-height: 100vh;
+  .admin-page{
+    min-height:100vh;
     padding: 26px;
     color: var(--text);
-    font-family: system-ui, -apple-system, Segoe UI, Roboto;
-    position: relative;
-    overflow: hidden;
-  
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
     background:
-      radial-gradient(1200px 620px at 15% 10%, rgba(98,174,218,0.22), transparent 60%),
-      radial-gradient(980px 680px at 85% 18%, rgba(34,197,94,0.18), transparent 55%),
-      radial-gradient(980px 680px at 60% 90%, rgba(139,92,246,0.10), transparent 55%),
+      radial-gradient(1100px 520px at 18% 10%, rgba(98,174,218,0.18), transparent 60%),
+      radial-gradient(980px 620px at 86% 18%, rgba(34,197,94,0.13), transparent 55%),
+      radial-gradient(940px 640px at 60% 92%, rgba(139,92,246,0.12), transparent 55%),
       linear-gradient(180deg, var(--bg0), var(--bg1));
+    position: relative;
+    overflow-x: hidden;
   }
   
-  .admin-page::before,
-  .admin-page::after {
-    content: "";
-    position: absolute;
-    inset: -180px;
-    pointer-events: none;
-    filter: blur(44px);
-    opacity: 0.70;
-    transform: translate3d(0,0,0);
-    animation: aurora 14s ease-in-out infinite alternate;
-  }
-  
-  .admin-page::before {
-    background:
-      radial-gradient(circle at 20% 20%, rgba(98,174,218,0.22), transparent 55%),
-      radial-gradient(circle at 70% 25%, rgba(34,197,94,0.18), transparent 58%),
-      radial-gradient(circle at 55% 85%, rgba(139,92,246,0.14), transparent 58%);
-  }
-  
-  .admin-page::after {
+  .admin-page::before{
+    content:"";
+    position:absolute;
+    inset:-200px;
+    pointer-events:none;
     opacity: 0.55;
-    animation-duration: 18s;
+    filter: blur(52px);
     background:
-      radial-gradient(circle at 80% 10%, rgba(245,158,11,0.10), transparent 55%),
-      radial-gradient(circle at 20% 80%, rgba(34,197,94,0.10), transparent 55%);
+      radial-gradient(circle at 18% 20%, rgba(98,174,218,0.22), transparent 55%),
+      radial-gradient(circle at 72% 25%, rgba(34,197,94,0.16), transparent 58%),
+      radial-gradient(circle at 52% 85%, rgba(139,92,246,0.14), transparent 58%);
   }
   
-  @keyframes aurora {
-    from { transform: translate3d(-18px, -14px, 0) scale(1.02); }
-    to   { transform: translate3d(18px, 14px, 0) scale(1.06); }
-  }
-  
-  /* Reduce motion if user prefers */
-  @media (prefers-reduced-motion: reduce) {
-    .admin-page::before,
-    .admin-page::after { animation: none; }
-  }
-  
-  /* Keep content above glow layers */
   .admin-header,
   .admin-cards,
   .admin-grid,
-  .admin-panel {
+  .admin-panel{
     position: relative;
-    z-index: 2;
+    z-index: 1;
   }
   
   /* ----------------------------
-     HEADER
+     HEADER (more balanced)
   ----------------------------- */
-  .admin-header {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
+  .admin-header{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
     gap: 14px;
     margin-bottom: 18px;
   }
   
-  .admin-title {
-    font-size: 30px;
-    font-weight: 950;
-    margin: 0;
-    letter-spacing: 0.25px;
-    text-shadow: 0 10px 40px rgba(0,0,0,0.55);
+  .admin-header > div:nth-child(2){
+    flex: 1;
+    min-width: 0;
   }
   
-  .admin-subtitle {
+  .admin-title{
+    margin: 0;
+    font-size: 30px;
+    font-weight: 950;
+    letter-spacing: 0.2px;
+    text-shadow: 0 10px 40px rgba(0,0,0,0.45);
+  }
+  
+  .admin-subtitle{
     margin: 6px 0 0;
     color: var(--muted);
   }
   
-  /* Back button (your JSX uses .admin-back) */
-  .admin-back {
+  .admin-back,
+  .admin-refresh{
     border: 1px solid var(--stroke2);
     background: rgba(2, 6, 23, 0.55);
     color: var(--text);
-    border-radius: 14px;
+    border-radius: 999px;
     padding: 10px 14px;
-    font-weight: 950;
+    font-weight: 900;
     cursor: pointer;
     backdrop-filter: blur(12px);
     box-shadow: var(--shadow2);
-    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, filter 0.16s ease;
   }
   
-  .admin-back:hover {
+  .admin-back:hover,
+  .admin-refresh:hover{
     transform: translateY(-1px);
-    border-color: rgba(226,232,240,0.25);
+    border-color: rgba(226,232,240,0.26);
     box-shadow: var(--shadow);
-  }
-  
-  /* Refresh button */
-  .admin-refresh {
-    border: 1px solid var(--stroke2);
-    background: rgba(2, 6, 23, 0.55);
-    color: var(--text);
-    border-radius: 14px;
-    padding: 10px 14px;
-    font-weight: 950;
-    cursor: pointer;
-    backdrop-filter: blur(12px);
-    box-shadow: var(--shadow2);
-    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .admin-refresh:hover {
-    transform: translateY(-1px);
-    border-color: rgba(226,232,240,0.25);
-    box-shadow: var(--shadow);
-  }
-  
-  .admin-refresh::after {
-    content: "";
-    position: absolute;
-    inset: -60%;
-    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.40), transparent 45%);
-    transform: translateX(-35%) rotate(10deg);
-    opacity: 0;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-  }
-  
-  .admin-refresh:hover::after {
-    opacity: 0.55;
-    transform: translateX(0%) rotate(10deg);
+    filter: brightness(1.03);
   }
   
   /* ----------------------------
-     CARDS (stats)
+     STATS CARDS (cleaner)
   ----------------------------- */
-  .admin-cards {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(160px, 1fr));
-    gap: 12px;
+  .admin-cards{
+    display:grid;
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+    gap: 14px;
     margin-bottom: 18px;
   }
   
-  .admin-card {
+  .admin-card{
     border: 1px solid var(--stroke);
-    background: linear-gradient(180deg, rgba(10,18,36,0.62), rgba(10,18,36,0.46));
-    border-radius: var(--r18);
-    padding: 14px;
+    background: linear-gradient(180deg, var(--panel), var(--panel2));
+    border-radius: var(--r22);
+    padding: 16px;
     box-shadow: var(--shadow2);
     backdrop-filter: blur(14px);
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
   }
   
-  .admin-card::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(circle at 25% 15%, rgba(98,174,218,0.22), transparent 55%),
-      radial-gradient(circle at 85% 10%, rgba(34,197,94,0.16), transparent 55%);
-    opacity: 0.55;
-    pointer-events: none;
-  }
-  
-  .admin-card::after {
-    content: "";
-    position: absolute;
-    inset: -30%;
-    background: radial-gradient(circle at 35% 25%, rgba(255,255,255,0.30), transparent 45%);
-    transform: translateX(-35%) rotate(8deg);
-    opacity: 0;
-    transition: opacity 0.18s ease, transform 0.18s ease;
-    pointer-events: none;
-  }
-  
-  .admin-card:hover {
+  .admin-card:hover{
     transform: translateY(-2px);
-    border-color: rgba(226,232,240,0.22);
+    border-color: rgba(226,232,240,0.20);
     box-shadow: var(--shadow);
   }
   
-  .admin-card:hover::after {
-    opacity: 0.55;
-    transform: translateX(0%) rotate(8deg);
-  }
-  
-  .admin-card-label {
-    opacity: 0.85;
+  .admin-card-label{
+    color: rgba(226,232,240,0.82);
     font-weight: 850;
     font-size: 12px;
     letter-spacing: 0.35px;
-    position: relative;
-    z-index: 1;
   }
   
-  .admin-card-value {
-    font-size: 30px;
+  .admin-card-value{
+    margin-top: 10px;
+    font-size: 34px;
     font-weight: 950;
-    margin-top: 8px;
-    position: relative;
-    z-index: 1;
   }
   
   /* ----------------------------
-     GRID layout
+     PANELS (less “boxy”)
   ----------------------------- */
-  .admin-grid {
-    display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
+  .admin-panel{
+    border: 1px solid var(--stroke);
+    background: linear-gradient(180deg, rgba(10,18,36,0.66), rgba(10,18,36,0.46));
+    border-radius: var(--r22);
+    padding: 16px;
+    box-shadow: var(--shadow2);
+    backdrop-filter: blur(14px);
+  }
+  
+  .admin-panel-title{
+    margin: 0 0 12px;
+    font-weight: 950;
+    letter-spacing: 0.2px;
+  }
+  
+  /* ----------------------------
+     GRID LAYOUT
+  ----------------------------- */
+  .admin-grid{
+    display:grid;
+    grid-template-columns: 1.15fr 0.85fr;
     gap: 14px;
   }
   
   /* ----------------------------
-     PANELS
+     INPUT + SELECT (remove “white box” look)
   ----------------------------- */
-  .admin-panel {
-    border: 1px solid var(--stroke);
-    background: linear-gradient(180deg, rgba(10,18,36,0.62), rgba(10,18,36,0.44));
-    border-radius: var(--r18);
-    padding: 14px;
-    box-shadow: var(--shadow2);
-    backdrop-filter: blur(14px);
+  .admin-panel input,
+  .admin-panel select{
+    background: rgba(2,6,23,0.35) !important;
+    color: var(--text) !important;
+    border: 1px solid rgba(226,232,240,0.16) !important;
+    border-radius: 14px !important;
+    outline: none;
+    box-shadow: none;
   }
   
-  .admin-panel-title {
-    margin: 0 0 12px;
-    font-weight: 950;
-    letter-spacing: 0.25px;
+  .admin-panel input:focus,
+  .admin-panel select:focus{
+    border-color: rgba(98,174,218,0.55) !important;
+    box-shadow: 0 0 0 4px rgba(98,174,218,0.16);
   }
   
   /* ----------------------------
-     TABLE
+     TABLE (THIS FIXES YOUR UGLY STACKING)
+     - Any number of columns will align automatically.
   ----------------------------- */
-  .admin-table {
-    width: 100%;
-    display: grid;
-    gap: 8px;
+  .admin-table{
+    width:100%;
+    display:grid;
+    gap: 10px;
   }
   
-  .admin-row {
-    display: grid;
-    grid-template-columns: 0.4fr 0.9fr 1.3fr 0.6fr 0.7fr 0.9fr;
-    gap: 10px;
-    padding: 11px 12px;
-    border-radius: 16px;
-    border: 1px solid rgba(226,232,240,0.10);
-    background: rgba(2, 6, 23, 0.28);
+  .admin-row{
+    display:grid;
+    grid-auto-flow: column;                      /* children become columns */
+    grid-auto-columns: minmax(120px, 1fr);       /* consistent column sizing */
+    gap: 12px;
     align-items: center;
+  
+    padding: 12px 14px;
+    border-radius: var(--r18);
+    border: 1px solid rgba(226,232,240,0.10);
+    background: rgba(2,6,23,0.26);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.20);
     transition: transform 0.14s ease, border-color 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
-    position: relative;
     overflow: hidden;
   }
   
-  .admin-row::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, rgba(98,174,218,0.10), transparent 35%, rgba(34,197,94,0.08));
-    opacity: 0;
-    transition: opacity 0.14s ease;
-    pointer-events: none;
+  .admin-row > div,
+  .cell{
+    min-width: 0; /* critical for wrapping */
   }
   
-  .admin-row:hover {
+  .admin-row:hover{
     transform: translateY(-1px);
     border-color: rgba(226,232,240,0.18);
-    background: rgba(2, 6, 23, 0.35);
-    box-shadow: 0 16px 34px rgba(0,0,0,0.22);
+    background: rgba(2,6,23,0.34);
+    box-shadow: 0 16px 34px rgba(0,0,0,0.24);
   }
   
-  .admin-row:hover::before {
-    opacity: 1;
-  }
-  
-  .admin-head {
+  .admin-head{
     font-weight: 950;
-    background: rgba(2, 6, 23, 0.54);
+    background: rgba(2,6,23,0.54);
     border-color: rgba(226,232,240,0.14);
   }
   
-  .admin-email {
-    opacity: 0.92;
+  /* Make “Email” look nice and not overflow */
+  .admin-email{
     font-size: 13px;
     color: rgba(226,232,240,0.84);
+    overflow-wrap: anywhere;
     word-break: break-word;
   }
   
+  /* Status cells (Active/Blocked) */
+  .admin-row span{
+    line-height: 1.2;
+  }
+  
   /* ----------------------------
-     ACTION BUTTONS (View Progress / Block / Unblock)
+     BUTTONS (pro)
   ----------------------------- */
-  .admin-btn {
-    border: none;
+  .admin-btn{
+    border: 1px solid rgba(226,232,240,0.12);
     border-radius: 999px;
     padding: 9px 14px;
     cursor: pointer;
-    font-weight: 950;
+    font-weight: 900;
     color: #04111c;
     background: linear-gradient(135deg, var(--aqua), var(--mint));
     box-shadow: 0 14px 28px rgba(34,197,94,0.13), 0 12px 22px rgba(98,174,218,0.10);
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease, opacity 0.15s ease;
+    white-space: nowrap;
   }
   
-  .admin-btn::after {
-    content: "";
-    position: absolute;
-    inset: -50%;
-    background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.55), transparent 48%);
-    transform: translateX(-35%) rotate(10deg);
-    opacity: 0;
-    transition: opacity 0.18s ease, transform 0.18s ease;
-  }
-  
-  .admin-btn:hover {
+  .admin-btn:hover{
     transform: translateY(-1px);
     box-shadow: 0 18px 38px rgba(34,197,94,0.16), 0 14px 26px rgba(98,174,218,0.12);
+    filter: brightness(1.02);
   }
   
-  .admin-btn:hover::after {
-    opacity: 0.65;
-    transform: translateX(0%) rotate(10deg);
-  }
-  
-  .admin-btn:disabled {
+  .admin-btn:disabled{
     opacity: 0.55;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
   }
   
-  /* ----------------------------
-     SEARCH INPUT + SELECT (your JSX uses inline styles,
-     but these still improve the look)
-  ----------------------------- */
-  .admin-panel input,
-  .admin-panel select {
-    background: rgba(226,232,240,0.95);
-    color: #0b1020;
-    border: 1px solid rgba(0,0,0,0.12) !important;
-    border-radius: 12px !important;
-    outline: none;
-    box-shadow: 0 12px 22px rgba(0,0,0,0.14);
+  .admin-btn.ghost{
+    background: rgba(148,163,184,0.12);
+    color: var(--text);
+    border: 1px solid rgba(226,232,240,0.16);
+    box-shadow: none;
   }
   
-  .admin-panel input:focus,
-  .admin-panel select:focus {
-    border-color: rgba(98,174,218,0.55) !important;
-    box-shadow:
-      0 0 0 4px rgba(98,174,218,0.18),
-      0 12px 22px rgba(0,0,0,0.14);
+  /* ----------------------------
+     FEEDBACK (comment layout + read more)
+  ----------------------------- */
+  /* =========================================
+   FEEDBACK COMMENT — CLEAN ADMIN STYLE
+   ========================================= */
+
+/* Container alignment fix */
+.feedback-table .admin-row,
+.admin-row {
+  align-items: center;
+}
+
+/* Comment box (no tooltip look) */
+.comment-text {
+  margin: 0;
+  padding: 12px 14px;
+
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.75),
+    rgba(15, 23, 42, 0.55)
+  );
+
+  border: 1px solid rgba(226, 232, 240, 0.14);
+  border-radius: 14px;
+
+  color: rgba(226, 232, 240, 0.95);
+  font-size: 14px;
+  line-height: 1.5;
+
+  /* proper wrapping */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+
+  /* clamp */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;     /* 👈 cleaner than 3 */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+/* Hover polish */
+.comment-text:hover {
+  border-color: rgba(98, 174, 218, 0.35);
+  background: rgba(15, 23, 42, 0.75);
+}
+
+/* Expanded state */
+.comment-text.expanded {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+/* REMOVE tooltip arrow look */
+.comment-text::before {
+  display: none !important;
+}
+
+/* Read more button — subtle admin link */
+.link-btn {
+  margin-top: 6px;
+  padding: 4px 10px;
+
+  border-radius: 999px;
+  border: 1px solid rgba(98, 174, 218, 0.25);
+
+  background: rgba(98, 174, 218, 0.08);
+  color: rgba(226, 232, 240, 0.9);
+
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.link-btn:hover {
+  background: rgba(98, 174, 218, 0.16);
+  border-color: rgba(98, 174, 218, 0.45);
+}
+
+/* Stars alignment fix */
+.stars {
+  font-size: 15px;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+/* Status chip alignment */
+.chip-pending,
+.chip-done {
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
+/* Action button alignment */
+.admin-row .admin-btn {
+  min-width: 110px;
+  justify-content: center;
+}
+
+  
+  .link-btn{
+    margin-top: 8px;
+    border: 1px solid rgba(98,174,218,0.22);
+
+  }
+  
+  .link-btn:hover{ filter: brightness(1.1); }
+  
+  .stars{
+    font-size: 16px;
+    letter-spacing: 1px;
   }
   
   /* ----------------------------
      PROGRESS PANEL
   ----------------------------- */
-  .progress-box {
-    display: grid;
-    gap: 12px;
-  }
+  .progress-box{ display:grid; gap: 12px; }
   
-  .progress-user {
+  .progress-user{
     padding: 12px;
-    border-radius: 16px;
-    background: rgba(2, 6, 23, 0.30);
+    border-radius: var(--r18);
+    background: rgba(2,6,23,0.28);
     border: 1px solid rgba(226,232,240,0.10);
   }
   
-  .progress-name {
-    font-weight: 950;
-    font-size: 16px;
-  }
+  .progress-name{ font-weight: 950; font-size: 16px; }
+  .progress-id{ opacity: 0.82; font-size: 12px; }
   
-  .progress-id {
-    opacity: 0.82;
-    font-size: 12px;
-  }
-  
-  .progress-item {
-    display: grid;
+  .progress-item{
+    display:grid;
     grid-template-columns: 1.2fr 1.6fr 0.4fr;
     gap: 10px;
     align-items: center;
   }
   
-  .progress-label {
-    font-weight: 900;
-    font-size: 13px;
-    opacity: 0.92;
-  }
+  .progress-label{ font-weight: 900; font-size: 13px; opacity: 0.92; }
   
-  .progress-bar {
+  .progress-bar{
     height: 12px;
     border-radius: 999px;
     background: rgba(226,232,240,0.12);
@@ -443,47 +451,21 @@
     border: 1px solid rgba(226,232,240,0.08);
   }
   
-  .progress-fill {
+  .progress-fill{
     height: 100%;
     width: 0;
     background: linear-gradient(135deg, var(--aqua), var(--mint));
     transition: width 0.35s ease;
   }
   
-  .progress-score {
+  .progress-score{
     text-align: right;
     font-weight: 950;
   }
   
   /* ----------------------------
-     RESPONSIVE
+     MODAL (clean)
   ----------------------------- */
-  @media (max-width: 980px) {
-    .admin-header {
-      grid-template-columns: 1fr;
-      justify-items: start;
-    }
-  
-    .admin-cards {
-      grid-template-columns: repeat(2, minmax(160px, 1fr));
-    }
-  
-    .admin-grid {
-      grid-template-columns: 1fr;
-    }
-  
-    .admin-row {
-      grid-template-columns: 0.5fr 1fr 1.2fr;
-      grid-auto-rows: auto;
-    }
-  }
-  
-  @media (max-width: 560px) {
-    .admin-page { padding: 16px; }
-    .admin-cards { grid-template-columns: 1fr; }
-    .admin-title { font-size: 24px; }
-  }
-  
   .admin-modal-backdrop{
     position: fixed;
     inset: 0;
@@ -496,10 +478,10 @@
   
   .admin-modal{
     width: min(560px, calc(100% - 28px));
-    border-radius: 18px;
+    border-radius: var(--r22);
     padding: 14px;
     border: 1px solid rgba(148,163,184,0.22);
-    background: rgba(2,6,23,0.78);
+    background: rgba(2,6,23,0.82);
     box-shadow: 0 30px 120px rgba(0,0,0,0.55);
   }
   
@@ -510,16 +492,16 @@
   
   .admin-modal-form input{
     padding: 10px 12px;
-    border-radius: 12px;
+    border-radius: 14px;
     border: 1px solid rgba(148,163,184,0.22);
-    background: rgba(2,6,23,0.55);
-    color: #e2e8f0;
+    background: rgba(2,6,23,0.45);
+    color: var(--text);
     outline: none;
   }
   
   .admin-modal-form input:focus{
     border-color: rgba(98,174,218,0.7);
-    box-shadow: 0 0 0 3px rgba(98,174,218,0.18);
+    box-shadow: 0 0 0 4px rgba(98,174,218,0.16);
   }
   
   .admin-modal-row{
@@ -543,8 +525,35 @@
     margin-top: 6px;
   }
   
-  .admin-btn.ghost{
-    background: rgba(148,163,184,0.16);
-    color: #e2e8f0;
+  /* ----------------------------
+     RESPONSIVE
+  ----------------------------- */
+  @media (max-width: 980px){
+    .admin-header{
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  
+    .admin-cards{
+      grid-template-columns: repeat(2, minmax(160px, 1fr));
+    }
+  
+    .admin-grid{
+      grid-template-columns: 1fr;
+    }
+  
+    /* stack table rows nicely on mobile */
+    .admin-row{
+      grid-auto-flow: row;
+      grid-auto-columns: unset;
+      gap: 8px;
+      align-items: flex-start;
+    }
+  }
+  
+  @media (max-width: 560px){
+    .admin-page{ padding: 16px; }
+    .admin-cards{ grid-template-columns: 1fr; }
+    .admin-title{ font-size: 24px; }
   }
   
