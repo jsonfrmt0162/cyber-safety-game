@@ -685,7 +685,7 @@ const quizProgress = useMemo(() => {
          </div>
        </section>
 
-      {/* Leaderboard
+      {/* Leaderboard */}
       <section className="leaderboard-section kids-leaderboard">
         <h2>🏆 Global Leaderboard</h2>
         <table className="leaderboard-table">
@@ -711,7 +711,7 @@ const quizProgress = useMemo(() => {
             ))}
           </tbody>
         </table>
-      </section> */}
+      </section>
 
       {showAccount && (
         <div className="acct-backdrop" onClick={closeAccount}>

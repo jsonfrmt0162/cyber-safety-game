@@ -794,7 +794,7 @@ export default function AdminDashboard() {
       </section>
 
       <section className="admin-panel" style={{ marginTop: 16 }}>
-        <h2 className="admin-panel-title">🏆 Quiz Leaderboard</h2>
+        <h2 className="admin-panel-title">🏆 Game Leaderboard</h2>
 
         <div className="admin-table table-leaderboard">
           {/* HEADER */}
