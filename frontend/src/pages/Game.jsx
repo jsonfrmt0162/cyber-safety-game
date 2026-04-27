@@ -2501,17 +2501,17 @@ export default function Game() {
               🎯 Quiz Challenge
             </button>
 
-            <button
+            {/* <button
               type="button"
               className={`mode-btn ${mode === "feedback" ? "active" : ""}`}
               onClick={() => setMode("feedback")}
             >
               📝 Feedback
-            </button>
+            </button> */}
 
           </div>
 
-          {mode === "feedback" && (
+          {/* {mode === "feedback" && (
             // If you want Feedback ONLY for topic 4:
              numericGameId !== 4 ? <p>Feedback is available for Topic 4 only.</p> :
             <div className="feedback-wrapper">
@@ -2585,7 +2585,7 @@ export default function Game() {
                 )}
               </div>
             </div>
-          )}
+          )} */}
 
 
 
@@ -2869,7 +2869,7 @@ export default function Game() {
         </section>
 
         <aside className="leaderboard-card">
-          <h2>🏆 Game Leaderboard</h2>
+          <h2>🏆 Quiz Leaderboard</h2>
           {leaderboard.length === 0 ? (
             <p className="lb-empty">No scores yet. Be the first!</p>
           ) : (

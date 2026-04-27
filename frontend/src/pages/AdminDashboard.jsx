@@ -3,6 +3,13 @@ import { api, adminCreateUser, adminUpdateUser } from "../services/api";
 import "../styles/AdminDashboard.css";
 import { useNavigate } from "react-router-dom";
 
+import {
+  getGlobalLeaderboard,
+  getGames,
+  getUserProgress,
+  updateMyAccount 
+} from "../services/api";
+
 const TOPIC_LABELS = {
   1: "Topic 1 (Digital Footprint)",
   2: "Topic 2 (Personal Info)",
@@ -35,6 +42,9 @@ export default function AdminDashboard() {
     age: "",
     is_admin: false,
   });
+
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [user, setUser] = useState(null);
 
   // Feedback
   const [feedbacks, setFeedbacks] = useState([]);
@@ -95,6 +105,27 @@ export default function AdminDashboard() {
     fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const storedUserId = localStorage.getItem("user_id");
+        if (!storedUserId) {
+          navigate("/");
+          return;
+        }
+
+        const leaderboardData = await getGlobalLeaderboard();
+
+        setLeaderboard(leaderboardData);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [navigate]);
 
   const suspiciousIds = useMemo(() => {
     return new Set((suspiciousUsers || []).map((u) => u.id));
@@ -261,6 +292,13 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("username");
+    navigate("/");
+  };
+
   const resolveFeedback = async (feedbackId) => {
     const ok = window.confirm("Mark this feedback as resolved?");
     if (!ok) return;
@@ -282,9 +320,9 @@ export default function AdminDashboard() {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <button className="admin-back" onClick={() => navigate("/dashboard")}>
+        {/* <button className="admin-back" onClick={() => navigate("/dashboard")}>
           ⬅ Back
-        </button>
+        </button> */}
 
         <div>
           <h1 className="admin-title">🛠 Admin Dashboard</h1>
@@ -296,10 +334,16 @@ export default function AdminDashboard() {
         <div className="admin-header-actions">
           <button className="admin-refresh" onClick={() => setShowCreate(true)}>
             ➕ Create User
-          </button>
+          </button>       
 
           <button className="admin-refresh" onClick={fetchAll}>
             🔄 Refresh
+          </button>       
+
+          <div className="header-divider" />        
+
+          <button className="admin-logout" onClick={handleLogout}>
+            Logout ➜
           </button>
         </div>
       </header>
@@ -743,6 +787,37 @@ export default function AdminDashboard() {
                     </button>
                   )}
                 </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="admin-panel" style={{ marginTop: 16 }}>
+        <h2 className="admin-panel-title">🏆 Quiz Leaderboard</h2>
+
+        <div className="admin-table table-leaderboard">
+          {/* HEADER */}
+          <div className="admin-row admin-head">
+            <div>Rank</div>
+            <div>Username</div>
+            <div>Score</div>
+          </div>
+
+          {/* DATA */}
+          {leaderboard.map((item, index) => {
+            const currentUserId = localStorage.getItem("user_id");
+          
+            return (
+              <div
+                key={item.id}
+                className={`admin-row ${
+                  item.id == currentUserId ? "leaderboard-current" : ""
+                }`}
+              >
+                <div>#{index + 1}</div>
+                <div style={{ fontWeight: 900 }}>{item.username}</div>
+                <div>{item.high_score}</div>
               </div>
             );
           })}

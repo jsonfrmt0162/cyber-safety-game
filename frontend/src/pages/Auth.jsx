@@ -1,4 +1,3 @@
-// src/pages/Auth.jsx
 import { useState } from "react";
 import { login, register } from "../services/api";
 import { useNavigate } from "react-router-dom";
@@ -70,8 +69,15 @@ export default function Auth() {
         localStorage.setItem("user_id", data.user_id);
         localStorage.setItem("username", data.username);
         localStorage.setItem("is_admin", data.is_admin ? "1" : "0");
-        showToast("success", `Welcome back, ${data.username || "player"}!`);
+        showToast("success", `Welcome, ${data.username || "player"}!`);
         navigate("/dashboard");
+
+        if (data.is_admin) {
+          navigate("/admin");  
+        } else {
+          navigate("/dashboard");
+        }
+
       } else {
         await register(form);
         showToast("success", "🎉 Registration successful! Please log in.");
@@ -175,7 +181,7 @@ export default function Auth() {
   
             <div>
               <h2 className="login-title">
-                {isLogin ? "Welcome back, Agent!" : "Create your player profile"}
+                {isLogin ? "Welcome, Agent!" : "Create your player profile"}
               </h2>
               <p className="login-subtext">
                 {isLogin
@@ -253,6 +259,9 @@ export default function Auth() {
                 information online.
               </p>
             </form>
+            <div className="age-notice">
+              ⚠️ Users must be 13 years old and below are allowed to access or enroll in the application.
+            </div>
   
             <p className="signup-text">
               {isLogin ? "New recruit? " : "Already have an account? "}

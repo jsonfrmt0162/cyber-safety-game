@@ -3,9 +3,11 @@ import "../styles/Dashboard.css";
 import "../pages/PhishBlasterGame";
 import cyberQuestLogo from "../assets/cyber_logo.jpeg";
 import LoadingOverlay from "../components/LoadingOverlay";
+import { Navigate } from "react-router-dom";
 
 import DashboardSkeleton from "../components/DashboardSkeleton";
 import {
+  api,
   getUserDashboard,
   getGlobalLeaderboard,
   getGames,
@@ -142,6 +144,72 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [showAccount, setShowAccount] = useState(false);
+  const isAdmin = localStorage.getItem("is_admin") === "1";
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  const [fbForm, setFbForm] = useState({
+    topic_id: 4,
+    category: "suggestion",
+    rating: 5,
+    message: "",
+  });
+  
+  const [fbBusy, setFbBusy] = useState(false);
+  const [fbNotice, setFbNotice] = useState(null);
+
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
+  
+  const closeFeedback = () => {
+    if (fbBusy) return;
+    setShowFeedback(false);
+    setFbNotice(null);
+  };
+  
+  const handleSubmitFeedback = async (e) => {
+    e.preventDefault();
+  
+    if (!fbForm.message.trim()) {
+      setFbNotice({
+        type: "error",
+        message: "Please enter your feedback before submitting.",
+      });
+      return;
+    }
+  
+    setFbBusy(true);
+    setFbNotice(null);
+  
+    try {
+      await api.post("/feedback", {
+        user_id: user.id,
+        topic_id: Number(fbForm.topic_id),
+        category: fbForm.category,
+        rating: Number(fbForm.rating),
+        message: fbForm.message.trim(),
+      });
+  
+      setFbForm({
+        topic_id: 4,
+        category: "suggestion",
+        rating: 5,
+        message: "",
+      });
+  
+      setFbNotice({
+        type: "success",
+        message: "Thank you! Your feedback was submitted successfully.",
+      });
+    } catch (err) {
+      setFbNotice({
+        type: "error",
+        message: err?.response?.data?.detail || "Failed to submit feedback.",
+      });
+    } finally {
+      setFbBusy(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -321,6 +389,7 @@ const quizProgress = useMemo(() => {
           </div>
         );
       }
+
   if (!user) return <p>Error loading user data.</p>;
 
   return (
@@ -445,87 +514,27 @@ const quizProgress = useMemo(() => {
           </div>
         </section>
 
-        <section className="topics-progress-section">
-           <div className="section-header">
-             <h2>Topic Progress</h2>
-             <p>
-               Each ring fills when you answer <strong>all</strong> questions
-               correctly for that topic.
-             </p>
-           </div>
-                     
-           <div className="topics-grid">
-           {topicProgress
-            .filter((topic) => {
-              const game = games.find((g) => g.id === topic.game_id);
-              return game?.is_quiz;     // only quizzes allowed
-            })
-            .map((topic) => (
-              <TopicProgressCard key={topic.game_id} topic={topic} />
-            ))}
-           </div>
-         </section>
+         {/* Topic description heading */}
+         <section className="topic-overview">
+          <h2 className="topic-title">
+            <img
+              src={cyberQuestLogo}
+              alt="CyberQuest logo"
+              className="brand-logo"
+            />
+            <span>CyberQuest.TO Topics</span>
+          </h2>
+            <p className="topic-overview-text">
+              These quizzes match your lesson topics: digital footprints,
+              personal information, passwords & passphrases, and social media
+              privacy. Each game uses real-life scenarios just like in your module.
+            </p>
+          </section>
 
-    {/* Smart habits section (checklist + why it matters) */}
-    <section className="info-section">
-      <div className="info-title">
-        <h2>🧠 Smart Online Habits</h2>
-        <p>Remember these ideas whenever you learn, play, or chat online.</p>
-      </div>
-
-      <div className="info-grid">
-        {/* left: checklist */}
-        <div className="safety-card">
-          <h2>🛡️ CyberQuest.TO Checklist</h2>
-          <p className="safety-intro">
-            Before you go online, remember these smart habits from your lessons.
-          </p>
-          {/* keep your existing checklist list here */}
-         <ul className="safety-list">
-           {SAFETY_CHECKLIST.map((item, idx) => (
-             <li key={idx}>
-               <span className="safety-bullet">✔</span>
-               <span>{item}</span>
-             </li>
-           ))}
-         </ul>
-        </div>
-
-        {/* right: why it matters */}
-        <div className="why-card">
-          <h2>🌍 Why CyberQuest.TO Portal Matters</h2>
-          <p>
-            The internet is an amazing place to learn, create, play, and connect
-            with others. But just like crossing the street, we need to stay smart
-            and safe. These topics help you protect your identity, your passwords,
-            and your digital footprint — now and in the future.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    
-      {/* Topic description heading */}
-      <section className="topic-overview">
-      <h2 className="topic-title">
-        <img
-          src={cyberQuestLogo}
-          alt="CyberQuest logo"
-          className="brand-logo"
-        />
-        <span>CyberQuest.TO Topics</span>
-      </h2>
-        <p className="topic-overview-text">
-          These four quizzes match your lesson topics: digital footprints,
-          personal information, passwords & passphrases, and social media
-          privacy. Each game uses real-life scenarios just like in your module.
-        </p>
-      </section>
-
-      {/* Game Cards */}
-      <section className="game-cards">
-          {games
-            .slice() // copy to avoid mutating
+        {/* Game Cards */}
+        <section className="game-cards">
+          {quizGames
+            .slice()
             .sort((a, b) => a.id - b.id)
             .map((game, index, arr) => {
               const progress = getProgressForGame(game.id);
@@ -535,12 +544,13 @@ const quizProgress = useMemo(() => {
               if (index > 0) {
                 const prevGame = arr[index - 1];
                 const prevProgress = getProgressForGame(prevGame.id);
+              
                 if (!prevProgress || prevProgress.percent < 100) {
                   locked = false;
                   prereqTitle = prevGame.title;
                 }
               }
-          
+            
               return (
                 <GameCard
                   key={game.id}
@@ -552,28 +562,130 @@ const quizProgress = useMemo(() => {
                 />
               );
             })}
+
+          <div className="game-card kids-card feature-panel">
+            <div className="game-card-header">
+              <span className="game-icon">🎮</span>
+              <div className="game-header-text">
+                <h5 className="game-title">Bonus Game - Anti Phish Blaster</h5>
+                <p className="game-subtitle">Practice spotting phishing tricks</p>
+              </div>
+              <span className="badge badge-progress">Mini Game</span>
+            </div>
+          
+            <div className="feature-panel-body">
+              <p>Blast suspicious links and learn how to avoid online scams.</p>
+            </div>
+          
+            <div className="game-card-footer">
+              <span className="score-text">Cyber Safety Game</span>
+              <button
+                className="play-btn"
+                onClick={() => navigate("/adventure", { state: { userId: user.id } })}
+              >
+                ▶ Play
+              </button>
+            </div>
+          </div>
+
+          <div className="game-card kids-card feature-panel">
+            <div className="game-card-header">
+              <span className="game-icon">📚</span>
+              <div className="game-header-text">
+                <h5 className="game-title">Glossary</h5>
+                <p className="game-subtitle">CyberQuest.TO Learning Guide</p>
+              </div>
+              <span className="badge badge-progress">Guide</span>
+            </div>
+
+            <div className="feature-panel-body">
+              <p>Review important cyber safety words and their meanings.</p>
+            </div>
+
+            <div className="game-card-footer">
+              <span className="score-text">Study Helper</span>
+              <button className="play-btn" onClick={() => navigate("/glossary")}>
+                Open
+              </button>
+            </div>
+          </div>
         </section>
 
-        <div className="center-actions">
-          <button
-            className="ghost-button"
-            type="button"
-            onClick={() => navigate("/adventure", { state: { userId: user.id } })}
-          >
-            Anti-Phish Blaster 🎮
-          </button>
+    {/* Smart habits section (checklist + why it matters) */}
+    <section className="info-section">
+      <div className="info-title">
+        <h2>🧠 Smart Online Habits</h2>
+        <p>Remember these ideas whenever you learn, play, or chat online.</p>
+      </div>
 
+      <div className="info-grid info-grid-three">
+        <div className="safety-card">
+          <h2>🛡️ CyberQuest.TO Checklist</h2>
+          <p className="safety-intro">
+            Before you go online, remember these smart habits from your lessons.
+          </p>
+
+          <ul className="safety-list">
+            {SAFETY_CHECKLIST.map((item, idx) => (
+              <li key={idx}>
+                <span className="safety-bullet">✔</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+            
+        <div className="why-card">
+          <h2>🌍 Why CyberQuest.TO Portal Matters</h2>
+          <p>
+            The internet is an amazing place to learn, create, play, and connect
+            with others. But just like crossing the street, we need to stay smart
+            and safe. These topics help you protect your identity, your passwords,
+            and your digital footprint — now and in the future.
+          </p>
+        </div>
+            
+        <div className="feedback-mini-card">
+          <h2>📝 Share Feedback</h2>
+          <p>
+            Found something confusing or have a suggestion? Send feedback to help us
+            improve CyberQuest.TO.
+          </p>
+            
           <button
-            className="ghost-button"
+            className="play-btn"
             type="button"
-            onClick={() => navigate("/glossary")}
+            onClick={() => setShowFeedback(true)}
           >
-            Glossary 📚
+            Give Feedback
           </button>
         </div>
+      </div>
+    </section>
 
 
-      {/* Leaderboard */}
+      <section className="topics-progress-section">
+         <div className="section-header">
+           <h2>Topic Progress</h2>
+           <p>
+             Each ring fills when you answer <strong>all</strong> questions
+             correctly for that topic.
+           </p>
+         </div>
+                   
+         <div className="topics-grid">
+         {topicProgress
+          .filter((topic) => {
+            const game = games.find((g) => g.id === topic.game_id);
+            return game?.is_quiz;     // only quizzes allowed
+          })
+          .map((topic) => (
+            <TopicProgressCard key={topic.game_id} topic={topic} />
+          ))}
+         </div>
+       </section>
+
+      {/* Leaderboard
       <section className="leaderboard-section kids-leaderboard">
         <h2>🏆 Global Leaderboard</h2>
         <table className="leaderboard-table">
@@ -599,7 +711,7 @@ const quizProgress = useMemo(() => {
             ))}
           </tbody>
         </table>
-      </section>
+      </section> */}
 
       {showAccount && (
         <div className="acct-backdrop" onClick={closeAccount}>
@@ -691,7 +803,103 @@ const quizProgress = useMemo(() => {
         </div>
       )}
 
-
+{showFeedback && (
+    <div className="acct-backdrop" onClick={closeFeedback}>
+      <div className="feedback-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="acct-header">
+          <div>
+            <h3 className="acct-title">📝 Share Your Feedback</h3>
+            <p className="acct-subtitle">
+              Tell us what we can improve in CyberQuest.TO.
+            </p>
+          </div>
+  
+          <button className="acct-close" onClick={closeFeedback} disabled={fbBusy}>
+            ✖
+          </button>
+        </div>
+  
+        {fbNotice && (
+          <div className={`dashboard-feedback-notice ${fbNotice.type}`}>
+            {fbNotice.message}
+          </div>
+        )}
+  
+        <form className="dashboard-feedback-form" onSubmit={handleSubmitFeedback}>
+          <div className="feedback-form-grid">
+            <div className="feedback-field">
+              <label>Topic</label>
+              <select
+                value={fbForm.topic_id}
+                onChange={(e) =>
+                  setFbForm((p) => ({ ...p, topic_id: e.target.value }))
+                }
+              >
+                <option value={1}>Topic 1 - Digital Footprint</option>
+                <option value={2}>Topic 2 - Personal Info & Privacy</option>
+                <option value={3}>Topic 3 - Passwords & Passphrases</option>
+                <option value={4}>Topic 4 - Social Media Safety</option>
+              </select>
+            </div>
+  
+            <div className="feedback-field">
+              <label>Category</label>
+              <select
+                value={fbForm.category}
+                onChange={(e) =>
+                  setFbForm((p) => ({ ...p, category: e.target.value }))
+                }
+              >
+                <option value="bug">🐛 Bug</option>
+                <option value="suggestion">💡 Suggestion</option>
+                <option value="content">📚 Lesson Content</option>
+                <option value="other">📝 Other</option>
+              </select>
+            </div>
+  
+            <div className="feedback-field">
+              <label>Rating</label>
+              <select
+                value={fbForm.rating}
+                onChange={(e) =>
+                  setFbForm((p) => ({ ...p, rating: Number(e.target.value) }))
+                }
+              >
+                <option value={5}>⭐⭐⭐⭐⭐</option>
+                <option value={4}>⭐⭐⭐⭐</option>
+                <option value={3}>⭐⭐⭐</option>
+                <option value={2}>⭐⭐</option>
+                <option value={1}>⭐</option>
+              </select>
+            </div>
+          </div>
+  
+          <div className="feedback-field">
+            <label>Your Feedback</label>
+            <textarea
+              rows={5}
+              value={fbForm.message}
+              onChange={(e) =>
+                setFbForm((p) => ({ ...p, message: e.target.value }))
+              }
+              placeholder="What should we improve? Did you find something confusing or helpful?"
+            />
+          </div>
+  
+          <div className="feedback-actions">
+              <button type="button" className="acct-btn ghost" onClick={closeFeedback} disabled={fbBusy}>
+                Cancel
+              </button>
+  
+              <button type="submit" className="feedback-submit-btn" disabled={fbBusy}>
+                {fbBusy ? "Submitting..." : "Submit Feedback ✅"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+                  
     </div>
   );
 }
