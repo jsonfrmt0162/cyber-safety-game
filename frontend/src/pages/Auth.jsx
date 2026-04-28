@@ -260,7 +260,7 @@ export default function Auth() {
               </p>
             </form>
             <div className="age-notice">
-              ⚠️ Users must be 13 years old and below are allowed to access or enroll in the application.
+              ⚠️ Users must be 13 years old and above to be allowed to access or enroll in the application.
             </div>
   
             <p className="signup-text">
