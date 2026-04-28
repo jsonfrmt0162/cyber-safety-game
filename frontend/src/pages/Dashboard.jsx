@@ -687,7 +687,7 @@ const quizProgress = useMemo(() => {
 
       {/* Leaderboard */}
       <section className="leaderboard-section kids-leaderboard">
-        <h2>🏆 Global Leaderboard</h2>
+        <h2>🏆 Game Global Leaderboard</h2>
         <table className="leaderboard-table">
           <thead>
             <tr>
